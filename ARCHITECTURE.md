@@ -1,0 +1,150 @@
+# APHELIOS – Systemarchitektur
+
+Dieses Dokument beschreibt, wie APHELIOS intern aufgebaut ist. Leitprinzipien:
+
+1. **Ereignisgesteuert** – Engines kommunizieren ausschließlich über einen Event-Bus,
+   niemals durch direkte Aufrufe. Das entkoppelt Module vollständig.
+2. **Modular** – Jede Engine ist unabhängig, läuft in ihrem eigenen asyncio-Task und
+   kann einzeln gestartet/gestoppt werden.
+3. **Plugin-basiert** – Neue Fähigkeiten werden als Plugins in Kategorie-Ordnern ergänzt
+   und automatisch entdeckt.
+4. **Sicher per Voreinstellung** – Gefährliche Aktionen laufen zwingend über das
+   SecurityGate und erfordern Bestätigung.
+
+---
+
+## 1 · Überblick
+
+```
+Frontend (HUD)  ──WebSocket──►  API-Server (FastAPI)
+                ◄─Events───────       │
+                                      │ publish/subscribe
+                                      ▼
+                                  EventBus
+                                      ▲
+                     ┌────────────────┼────────────────┐
+                     │                │                │
+                EngineManager    SecurityGate     PluginLoader
+                     │
+        ┌────────────┼─────────────┬───────────────┐
+        ▼            ▼             ▼               ▼
+   SystemEngine  Conversation   Memory      (Voice, Vision,
+   (psutil)      Engine         Engine       Automation … Stubs)
+```
+
+---
+
+## 2 · Kernkomponenten (`backend/aphelios/core/`)
+
+### EventBus (`event_bus.py`)
+Ein asynchrones Publish/Subscribe-System. Herzstück der Kommunikation.
+
+- `subscribe(topic, callback)` – registriert einen (async) Handler für ein Topic.
+  Topics unterstützen Wildcards (`system.*`, `*`).
+- `await publish(Event)` – verteilt ein Event an alle passenden Subscriber.
+- Ein `Event` hat `topic: str`, `data: dict` und `source: str`.
+
+Beispiel-Topics: `system.stats`, `chat.request`, `chat.response`, `chat.token`,
+`confirmation.request`, `confirmation.approve`, `memory.note`.
+
+### BaseEngine (`engine.py`)
+Abstrakte Basisklasse für alle Engines.
+
+```python
+class BaseEngine(ABC):
+    name: str
+    async def start(self) -> None: ...   # Ressourcen aufbauen, Loops starten
+    async def stop(self)  -> None: ...   # sauber herunterfahren
+    async def handle(self, event: Event) -> None: ...   # Event verarbeiten
+```
+
+Jede Engine bekommt beim Erstellen den EventBus injiziert und abonniert dort ihre Topics.
+
+### EngineManager (`manager.py`)
+Registriert Engines, startet/stoppt alle gemeinsam und überwacht ihre Tasks.
+
+### Config (`config.py`)
+Lädt Einstellungen aus Umgebungsvariablen / `.env` (Provider, API-Keys, Vault-Pfad,
+Poll-Intervall, Modell-ID, API-Host/Port). Siehe `.env.example`.
+
+### SecurityGate (`security.py`)
+Klassifiziert Aktionen und blockiert gefährliche, bis eine Bestätigung vorliegt.
+Details in [`docs/security.md`](./docs/security.md).
+
+---
+
+## 3 · Engines (`backend/aphelios/engines/`)
+
+| Engine | Alpha 1.0 | Aufgabe |
+|---|---|---|
+| **SystemEngine** | ✅ real | System-Telemetrie via `psutil`, publisht `system.stats` |
+| **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback) |
+| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen, SQLite-Index |
+| ReasoningEngine | 🔌 stub | mehrstufiges Schlussfolgern |
+| PlanningEngine | 🔌 stub | Aufgaben in Schritte zerlegen |
+| AutomationEngine | 🔌 stub | PowerShell / pywinauto / Playwright |
+| CodingEngine | 🔌 stub | Code schreiben/refactoren |
+| BrowserEngine | 🔌 stub | Browser-Steuerung |
+| KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |
+| VisionEngine | 🔌 stub | OCR, Bildschirm-Verständnis |
+| VoiceEngine | 🔌 stub | Whisper STT + hochwertige TTS |
+| AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
+
+Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und
+`TODO`-Hinweise – neue Funktionalität ist damit „drop-in".
+
+---
+
+## 4 · Plugin-System (`backend/aphelios/plugins/`)
+
+- `base.py` – `Plugin`-Basisklasse + Manifest-Schema
+  (`name`, `version`, `category`, `entrypoint`, `permissions`).
+- `loader.py` – durchsucht `/plugins/<Kategorie>/`, validiert Manifeste, registriert Plugins.
+- Kategorie-Ordner unter `/plugins/` entsprechen der Vision (Core, Voice, Memory, Browser,
+  Windows, Developer, Office, AI, Automation, Security, Vision, Music, Calendar, Mail,
+  HomeDesk, SmartHome).
+
+Details in [`docs/plugins.md`](./docs/plugins.md).
+
+---
+
+## 5 · API-Server (`backend/aphelios/api/server.py`)
+
+FastAPI-Anwendung, die das HUD mit dem Kern verbindet:
+
+| Route | Typ | Zweck |
+|---|---|---|
+| `GET /health` | HTTP | Health-Check + Engine-Status |
+| `WS /ws` | WebSocket | Live-Stream von `system.stats` & Engine-Events an das HUD |
+| `POST /chat` | HTTP | Einzelne Chat-Anfrage → Antwort (nicht-streamend) |
+
+Über den WebSocket kann das HUD auch Chat-Nachrichten senden (`{"type":"chat", ...}`)
+und erhält Antwort-Token gestreamt zurück (`chat.token` → `chat.response`).
+
+---
+
+## 6 · Frontend (`frontend/`)
+
+- **State**: Ein Zustand-Store hält die Live-Daten (Stats, Konsolen-Verlauf, Engine-Status).
+- **Transport**: `lib/ws.ts` verbindet sich mit `/ws` (mit Auto-Reconnect). Fällt die
+  Verbindung aus, speist `lib/mock.ts` realistische Mock-Daten ein – das HUD bleibt lauffähig.
+- **HUD-Primitive** (`src/hud/`): wiederverwendbare Bausteine (Core, Ring, Gauge, Panel,
+  ScanLines, Particles, Grid).
+- **Panels** (`src/panels/`): SystemStats (links), InfoPanels (rechts), Console (unten).
+- **Voice** (`src/voice/`): Wake-Word-Erkennung „Aphelios" via Web Speech API.
+
+Details in [`docs/design-system.md`](./docs/design-system.md).
+
+---
+
+## 7 · Datenfluss (Beispiel: „Wie ist die CPU-Auslastung?")
+
+```
+Nutzer spricht/tippt  ─►  Console  ─►  WS {type:chat}  ─►  API-Server
+   ─►  EventBus.publish("chat.request")  ─►  ConversationEngine
+   ─►  (nutzt system.stats aus dem Kontext)  ─►  Antwort-Token
+   ─►  EventBus.publish("chat.token"…)  ─►  API-Server  ─►  WS  ─►  Console (animiert)
+```
+
+Parallel läuft die SystemEngine im Hintergrund und publisht alle N Sekunden
+`system.stats`, das der API-Server an alle verbundenen HUDs streamt.

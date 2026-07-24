@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aphelios"
+version = "1.0.0a1"
+description = "APHELIOS – Desktop AI Operating System Assistant (backend)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "NOTNiklas" }]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "psutil>=5.9",
+    "python-dotenv>=1.0",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+# Optional GPU telemetry (NVIDIA). Gracefully skipped if unavailable.
+gpu = ["nvidia-ml-py>=12.535"]
+# Optional local vector memory (future).
+vector = ["chromadb>=0.4"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
+
+[project.scripts]
+aphelios = "aphelios.__main__:run"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aphelios*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

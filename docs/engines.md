@@ -1,0 +1,69 @@
+# Engines
+
+Eine **Engine** ist ein unabhängiges Modul, das eine Fähigkeit von APHELIOS bereitstellt.
+Alle Engines erben von `BaseEngine` und kommunizieren ausschließlich über den EventBus.
+
+## Lebenszyklus
+
+```
+EngineManager.register(engine)
+        │
+        ▼
+   await engine.start()      # abonniert Topics, startet Hintergrund-Loops
+        │
+        ▼
+   engine.handle(event)      # reagiert auf abonnierte Events
+        │
+        ▼
+   await engine.stop()       # fährt sauber herunter
+```
+
+## Eine neue Engine erstellen
+
+```python
+from aphelios.core.engine import BaseEngine
+from aphelios.core.event_bus import Event
+
+class MyEngine(BaseEngine):
+    name = "my"
+
+    async def start(self) -> None:
+        self.bus.subscribe("my.request", self.handle)
+
+    async def handle(self, event: Event) -> None:
+        # ... Arbeit erledigen ...
+        await self.bus.publish(Event("my.response", {"ok": True}, source=self.name))
+
+    async def stop(self) -> None:
+        pass
+```
+
+Registrieren in `aphelios/__main__.py`:
+
+```python
+manager.register(MyEngine(bus, config))
+```
+
+## Engines in Alpha 1.0
+
+### SystemEngine (real)
+Sammelt System-Telemetrie mit `psutil` und publisht periodisch `system.stats`:
+CPU-Last, RAM, Disk, Netzwerk-Durchsatz, Temperatur und Akku. GPU/VRAM werden
+über `pynvml`/`GPUtil` gelesen, falls verfügbar – sonst wird der Wert als „n/a"
+markiert. Das Intervall kommt aus `APHELIOS_STATS_INTERVAL`.
+
+### ConversationEngine (real)
+Beantwortet Chat-Anfragen (`chat.request`) über den konfigurierten AI-Provider
+(Standard: Claude API). Der Systemprompt definiert die APHELIOS-Persönlichkeit
+(ruhig, präzise, deutsch). Ohne API-Key antwortet die Engine mit einer sinnvollen
+lokalen Fallback-Nachricht, damit das System immer lauffähig bleibt.
+
+### MemoryEngine (real)
+Persistiert Informationen als Markdown-Notizen in einem Obsidian-Vault. Jede Notiz
+erhält YAML-Frontmatter mit `tags`, wird in eine passende Kategorie (Personen,
+Projekte, Ideen, Code, Fehler, Lösungen …) einsortiert und über `[[Backlinks]]`
+verknüpft. Ein SQLite-Index ermöglicht schnelles Wiederfinden.
+
+### Stub-Engines
+Reasoning, Planning, Automation, Coding, Browser, Knowledge, Vision, Voice, Agent –
+vollständige Signaturen, aber noch keine Implementierung (siehe `ROADMAP.md`).

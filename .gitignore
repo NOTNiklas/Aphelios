@@ -1,0 +1,45 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.sqlite
+*.sqlite3
+*.db
+
+# ---- Node / Frontend ----
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+*.local
+
+# ---- Tauri / Rust ----
+frontend/src-tauri/target/
+Cargo.lock
+
+# ---- Secrets & local config ----
+.env
+.env.*
+!.env.example
+
+# ---- Editor / OS ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Aphelios runtime data ----
+vault/
+data/
+logs/
+*.log
