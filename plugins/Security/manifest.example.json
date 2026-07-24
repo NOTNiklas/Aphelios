@@ -1,0 +1,9 @@
+{
+  "name": "action-guard",
+  "version": "0.1.0",
+  "category": "Security",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Zusätzliche Bestätigungs-Policies.",
+  "permissions": [],
+  "enabled": false
+}

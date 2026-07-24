@@ -1,0 +1,11 @@
+{
+  "name": "wake-word",
+  "version": "0.1.0",
+  "category": "Voice",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Aktivierungswort-Erkennung und Sprachsteuerung.",
+  "permissions": [
+    "audio"
+  ],
+  "enabled": false
+}

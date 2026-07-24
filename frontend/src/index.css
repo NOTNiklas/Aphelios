@@ -1,0 +1,65 @@
+/* Lokal gebündelte Schriften (kein externes CDN). */
+@import "@fontsource/orbitron/400.css";
+@import "@fontsource/orbitron/700.css";
+@import "@fontsource/orbitron/900.css";
+@import "@fontsource/rajdhani/400.css";
+@import "@fontsource/rajdhani/500.css";
+@import "@fontsource/rajdhani/600.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: #000;
+}
+
+body {
+  font-family: "Rajdhani", system-ui, sans-serif;
+  color: #00ff88;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dünne Neon-Scrollbar für die Konsole. */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.35);
+  border-radius: 3px;
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.7);
+  }
+  .glass {
+    background: rgba(0, 40, 28, 0.22);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 255, 136, 0.18);
+  }
+  .track {
+    letter-spacing: 0.28em;
+  }
+}
+
+/* Respektiert die System-Einstellung „Bewegung reduzieren". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

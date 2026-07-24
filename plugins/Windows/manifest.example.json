@@ -1,0 +1,11 @@
+{
+  "name": "app-launcher",
+  "version": "0.1.0",
+  "category": "Windows",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Startet und schließt Windows-Programme.",
+  "permissions": [
+    "process"
+  ],
+  "enabled": false
+}

@@ -1,0 +1,11 @@
+{
+  "name": "homedesk-open",
+  "version": "0.1.0",
+  "category": "HomeDesk",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Öffnet und steuert den HomeDesk-Arbeitsbereich.",
+  "permissions": [
+    "process"
+  ],
+  "enabled": false
+}

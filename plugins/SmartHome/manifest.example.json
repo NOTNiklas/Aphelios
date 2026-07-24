@@ -1,0 +1,11 @@
+{
+  "name": "home-assistant",
+  "version": "0.1.0",
+  "category": "SmartHome",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Steuert Smart-Home-Geräte via Home Assistant.",
+  "permissions": [
+    "network"
+  ],
+  "enabled": false
+}

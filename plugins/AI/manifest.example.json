@@ -1,0 +1,11 @@
+{
+  "name": "model-router",
+  "version": "0.1.0",
+  "category": "AI",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Routet Anfragen an verschiedene AI-Modelle.",
+  "permissions": [
+    "network"
+  ],
+  "enabled": false
+}

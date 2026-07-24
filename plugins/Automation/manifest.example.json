@@ -1,0 +1,12 @@
+{
+  "name": "routine-runner",
+  "version": "0.1.0",
+  "category": "Automation",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Führt gespeicherte Abläufe automatisch aus.",
+  "permissions": [
+    "process",
+    "filesystem"
+  ],
+  "enabled": false
+}

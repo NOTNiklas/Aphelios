@@ -1,0 +1,11 @@
+{
+  "name": "core-heartbeat",
+  "version": "0.1.0",
+  "category": "Core",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "System-Kernfunktionen und Health-Signale.",
+  "permissions": [
+    "process"
+  ],
+  "enabled": false
+}
