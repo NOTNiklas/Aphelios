@@ -21,32 +21,36 @@ export function TopBar() {
   });
 
   return (
-    <header className="flex items-center justify-between px-6 py-3">
-      <div className="flex items-center gap-3">
+    <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 sm:px-6">
+      <div className="flex items-center gap-2 sm:gap-3">
         <span className="font-display text-lg tracking-[0.4em] text-hud-neon text-glow">⬡</span>
         <span className="font-display text-xs tracking-[0.5em] text-hud-neon-dim">APHELIOS</span>
-        <span className="rounded border border-hud-neon/30 px-2 py-0.5 font-hud text-[10px] tracking-[0.3em] text-hud-neon/60">
+        <span className="hidden rounded border border-hud-neon/30 px-2 py-0.5 font-hud text-[10px] tracking-[0.3em] text-hud-neon/60 sm:inline-block">
           ALPHA 1.0
         </span>
       </div>
 
-      <div className="flex items-center gap-6">
-        <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon/60">
+      <div className="flex items-center gap-3 sm:gap-6">
+        <span className="hidden font-hud text-[11px] tracking-[0.3em] text-hud-neon/60 md:inline">
           AI: {ai === "claude" ? "CLAUDE" : "FALLBACK"}
         </span>
         <div className="flex items-center gap-2">
           <span
-            className={`h-2 w-2 rounded-full ${
+            className={`h-2 w-2 shrink-0 rounded-full ${
               link === "online" ? "bg-hud-neon animate-pulse-soft" : "bg-hud-danger"
             }`}
           />
-          <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon-dim">
+          <span className="hidden font-hud text-[11px] tracking-[0.3em] text-hud-neon-dim sm:inline">
             {link.toUpperCase()}
           </span>
         </div>
         <div className="text-right">
-          <div className="font-display text-xl tabular-nums text-hud-neon text-glow">{time}</div>
-          <div className="font-hud text-[11px] tracking-[0.2em] text-hud-neon/50">{date}</div>
+          <div className="font-display text-lg tabular-nums text-hud-neon text-glow sm:text-xl">
+            {time}
+          </div>
+          <div className="hidden font-hud text-[11px] tracking-[0.2em] text-hud-neon/50 sm:block">
+            {date}
+          </div>
         </div>
       </div>
     </header>

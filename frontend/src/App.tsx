@@ -40,13 +40,17 @@ export default function App() {
             <Core />
           </div>
 
-          {/* Linke Spalte: System */}
-          <div className="absolute left-6 top-1/2 hidden -translate-y-1/2 lg:block">
+          {/* Linke Spalte: System.
+              inset-y statt top-1/2/-translate-y-1/2, damit die Spalte auf die
+              zwischen TopBar und Konsole verfügbare Höhe begrenzt bleibt: bei
+              wenig Platz (kleine Fenster/Laptop-Displays) scrollt sie intern,
+              statt TopBar/Konsole zu überlappen. */}
+          <div className="absolute inset-y-4 left-6 hidden overflow-y-auto lg:flex lg:flex-col lg:justify-center">
             <SystemStats />
           </div>
 
-          {/* Rechte Spalte: Info */}
-          <div className="absolute right-6 top-1/2 hidden -translate-y-1/2 lg:block">
+          {/* Rechte Spalte: Info (gleiche Höhenbegrenzung wie links). */}
+          <div className="absolute inset-y-4 right-6 hidden overflow-y-auto lg:flex lg:flex-col lg:justify-center">
             <InfoPanels />
           </div>
         </main>
