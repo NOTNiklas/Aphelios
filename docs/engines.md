@@ -38,10 +38,11 @@ class MyEngine(BaseEngine):
         pass
 ```
 
-Registrieren in `aphelios/__main__.py`:
+Registrieren in `aphelios/engines/__init__.py` (Liste `ALL_ENGINES`) – der
+`EngineManager` instanziiert und startet sie dann automatisch:
 
 ```python
-manager.register(MyEngine(bus, config))
+manager.register(MyEngine(bus, config, security))
 ```
 
 ## Engines in Alpha 1.0
@@ -56,13 +57,31 @@ markiert. Das Intervall kommt aus `APHELIOS_STATS_INTERVAL`.
 Beantwortet Chat-Anfragen (`chat.request`) über den konfigurierten AI-Provider
 (Standard: Claude API). Der Systemprompt definiert die APHELIOS-Persönlichkeit
 (ruhig, präzise, deutsch). Ohne API-Key antwortet die Engine mit einer sinnvollen
-lokalen Fallback-Nachricht, damit das System immer lauffähig bleibt.
+lokalen Fallback-Nachricht. **Wichtig:** Ist ein Key vorhanden, die Anfrage
+schlägt aber trotzdem fehl (falscher Key, Kontingent, Netzwerk), zeigt die
+Antwort die **echte Fehlermeldung** an – nicht dieselbe „kein Key hinterlegt"-
+Nachricht wie ohne Key, damit der Fehler diagnostizierbar bleibt.
 
 ### MemoryEngine (real)
 Persistiert Informationen als Markdown-Notizen in einem Obsidian-Vault. Jede Notiz
 erhält YAML-Frontmatter mit `tags`, wird in eine passende Kategorie (Personen,
 Projekte, Ideen, Code, Fehler, Lösungen …) einsortiert und über `[[Backlinks]]`
-verknüpft. Ein SQLite-Index ermöglicht schnelles Wiederfinden.
+verknüpft. Ein SQLite-Index ermöglicht schnelles Wiederfinden. **Automatische
+Verlinkung:** Neue Notizen werden automatisch mit thematisch verwandten
+Notizen verknüpft (gleiche Kategorie oder gemeinsame Tags) – dadurch zeigt
+Obsidians eingebauter **Graph View** die Notizen als verbundenes Netz, ganz
+ohne manuelles Verlinken.
+
+### WeatherEngine (real)
+Ruft periodisch echtes Wetter über [Open-Meteo](https://open-meteo.com/) ab –
+kein API-Key nötig. Stadt über `APHELIOS_WEATHER_CITY` konfigurierbar.
+
+### MailEngine / CalendarEngine (real, optional)
+Lesen ungelesene Gmail-Nachrichten bzw. kommende Google-Kalender-Termine.
+Anders als Wetter benötigen beide eine eigene Google-OAuth-Anmeldung des
+Nutzers (`docs/integrations.md`) – ohne diese bleiben sie inaktiv und das HUD
+zeigt weiterhin eine Mock-Vorschau. Rein lesend; Schreibzugriff ist eine
+spätere, über das SecurityGate bestätigungspflichtige Ausbaustufe.
 
 ### Stub-Engines
 Reasoning, Planning, Automation, Coding, Browser, Knowledge, Vision, Voice, Agent –

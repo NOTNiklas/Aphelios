@@ -6,12 +6,31 @@ import asyncio
 
 import pytest
 
-from aphelios.core.config import Config
+from aphelios.core.config import Config, _get
 from aphelios.core.engine import BaseEngine
 from aphelios.core.event_bus import Event, EventBus
 from aphelios.core.manager import EngineManager
 from aphelios.core.security import RiskLevel, SecurityGate
 from aphelios.engines.memory_engine import MemoryEngine
+from aphelios.engines.weather_engine import describe_weather_code
+
+
+# -- Config --------------------------------------------------------------
+def test_get_strips_whitespace_and_quotes(monkeypatch):
+    # Regression: "KEY= wert" (Leerzeichen nach dem "=") machte z. B. einen
+    # API-Key unbemerkt ungültig – die Anfrage schlug fehl, ohne dass der
+    # Nutzer den Grund sah (siehe ConversationEngine-Fallback).
+    monkeypatch.setenv("APHELIOS_TEST_KEY", " sk-ant-abc123 ")
+    assert _get("APHELIOS_TEST_KEY", "") == "sk-ant-abc123"
+
+    monkeypatch.setenv("APHELIOS_TEST_KEY", '"sk-ant-xyz"')
+    assert _get("APHELIOS_TEST_KEY", "") == "sk-ant-xyz"
+
+
+def test_config_has_anthropic_respects_stripped_key(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "   ")
+    # Nur Leerzeichen → nach dem Trimmen leer → gilt als "kein Key".
+    assert Config.from_env().has_anthropic is False
 
 
 # -- Event-Bus ---------------------------------------------------------------
@@ -132,3 +151,42 @@ async def test_memory_engine_writes_vault(tmp_path):
     assert "title: Docker Fehler" in note
     assert "- docker" in note
     assert "[[Projekt X]]" in note
+    # Kategorie landet zusätzlich als Tag im Frontmatter (Graph-Clustering).
+    assert "- fehler" in note
+
+
+async def test_memory_engine_auto_links_related_notes(tmp_path):
+    # Regression/Feature: Notizen mit gemeinsamem Tag oder gleicher Kategorie
+    # sollen automatisch per [[Wikilink]] verbunden werden, damit Obsidians
+    # Graph View die Verbindungen zeigt – ganz ohne manuelles Verlinken.
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+
+    await engine.handle(
+        Event(
+            "memory.note",
+            {"title": "Docker Setup Notizen", "content": "Grundkonfiguration.", "tags": ["docker"]},
+        )
+    )
+    await engine.handle(
+        Event(
+            "memory.note",
+            {"title": "Docker Compose Notizen", "content": "Mehrere Container.", "tags": ["docker"]},
+        )
+    )
+    await engine.stop()
+
+    note = (
+        config.vault_path / "Notizen" / "Docker-Compose-Notizen.md"
+    ).read_text(encoding="utf-8")
+    assert "[[Docker Setup Notizen]]" in note
+
+
+# -- WeatherEngine -------------------------------------------------------
+def test_describe_weather_code_known_and_unknown():
+    assert describe_weather_code(0) == "Klarer Himmel"
+    assert describe_weather_code(95) == "Gewitter"
+    assert describe_weather_code(9999) == "Unbekannt"
+    assert describe_weather_code(None) == "Unbekannt"

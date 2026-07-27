@@ -5,6 +5,14 @@ YAML-Frontmatter mit ``tags``, automatische Einsortierung in Kategorien
 (Personen, Projekte, Ideen, Code, Fehler, Lösungen …) und ``[[Backlinks]]``.
 Ein SQLite-Index ermöglicht schnelles Wiederfinden.
 
+**Automatische Verknüpfung (Graph View):** Jede neue Notiz wird automatisch mit
+thematisch verwandten Notizen verlinkt – verwandt heißt: gleiche Kategorie oder
+mindestens ein gemeinsamer Tag. Diese ``[[Wikilinks]]`` reichen aus, damit
+Obsidians eingebauter **Graph View** und das **Backlinks-Panel** die
+Datenpakete automatisch als verbundenes Netz darstellen – dafür ist keine
+zusätzliche Konfiguration in Obsidian nötig, nur der richtige Vault-Pfad
+(``APHELIOS_VAULT_PATH`` in der ``.env``, siehe ``.env.example``).
+
 Bus-Schnittstelle:
     * ``memory.note`` (in)  – ``{title, content, category?, tags?, links?}`` speichern
     * ``memory.search`` (in) – ``{id, query}`` → antwortet mit ``memory.result``
@@ -94,8 +102,15 @@ class MemoryEngine(BaseEngine):
         if not title:
             return
         category = event.data.get("category") or self._classify(f"{title}\n{content}")
-        tags = event.data.get("tags") or []
-        links = event.data.get("links") or []
+        tags = list(event.data.get("tags") or [])
+        explicit_links = list(event.data.get("links") or [])
+
+        # Automatische Verknüpfung: verwandte Notizen (gleiche Kategorie oder
+        # gemeinsame Tags) werden zusätzlich zu expliziten Links verlinkt –
+        # das Ergebnis sieht Obsidians Graph View als verbundenes Netz.
+        related = self._find_related(tags, category, exclude_title=title)
+        links = list(dict.fromkeys(explicit_links + related))  # Duplikate raus, Reihenfolge bleibt
+
         path = self._write_note(title, content, category, tags, links)
 
         self._db.execute(
@@ -136,6 +151,47 @@ class MemoryEngine(BaseEngine):
                 return category
         return "Notizen"
 
+    def _find_related(
+        self, tags: list[str], category: str, exclude_title: str, limit: int = 6
+    ) -> list[str]:
+        """Findet thematisch verwandte Notizen für automatische Backlinks.
+
+        „Verwandt" = mindestens ein gemeinsamer Tag ODER dieselbe Kategorie.
+        Ergebnis nach Anzahl gemeinsamer Merkmale sortiert (mehr Überlappung
+        zuerst), damit die engsten Verwandten oben stehen.
+        """
+        own_tags = {t.strip().lower() for t in tags if t.strip()} | {category.lower()}
+        if not own_tags:
+            return []
+
+        rows = self._db.execute(
+            "SELECT title, category, tags FROM notes "
+            "WHERE title != ? ORDER BY created_at DESC LIMIT 300",
+            (exclude_title,),
+        ).fetchall()
+
+        scored: list[tuple[int, str]] = []
+        for other_title, other_category, other_tags in rows:
+            other_set = {
+                t.strip().lower() for t in (other_tags or "").split(",") if t.strip()
+            } | {(other_category or "").lower()}
+            overlap = len(own_tags & other_set)
+            if overlap > 0:
+                scored.append((overlap, other_title))
+
+        scored.sort(key=lambda pair: -pair[0])
+        # Bei Titel-Duplikaten (Notiz wurde aktualisiert) nur einmal zählen.
+        seen: set[str] = set()
+        result: list[str] = []
+        for _, other_title in scored:
+            if other_title in seen:
+                continue
+            seen.add(other_title)
+            result.append(other_title)
+            if len(result) >= limit:
+                break
+        return result
+
     def _write_note(
         self,
         title: str,
@@ -148,6 +204,10 @@ class MemoryEngine(BaseEngine):
         folder.mkdir(exist_ok=True)
         path = folder / f"{_slugify(title)}.md"
 
+        # Kategorie zusätzlich als Tag aufnehmen (dedupliziert) – das lässt
+        # Obsidians Tag-Panel und den Graph automatisch nach Kategorie clustern.
+        all_tags = list(dict.fromkeys([*tags, category.lower()]))
+
         now = datetime.now(timezone.utc).isoformat()
         frontmatter = [
             "---",
@@ -155,7 +215,7 @@ class MemoryEngine(BaseEngine):
             f"category: {category}",
             f"created: {now}",
             "tags:",
-            *[f"  - {tag}" for tag in tags],
+            *[f"  - {tag}" for tag in all_tags],
             "---",
             "",
         ]

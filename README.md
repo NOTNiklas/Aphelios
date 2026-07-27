@@ -36,10 +36,14 @@ später einfach ergänzen.
 | **System-Monitoring** | ✅ Real | CPU / RAM / Disk / Netzwerk / Temperatur / Akku via `psutil` |
 | **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key) |
 | **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index |
-| **Sprachaktivierung** | ✅ Basis | Wake-Word „Aphelios" via Web Speech API (Browser) |
+| **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Sprachausgabe (Web Speech API, Browser) |
+| **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
+| **Gmail / Kalender** | ✅ Real, optional | Eigener Google-OAuth-Client nötig, siehe [`docs/integrations.md`](./docs/integrations.md) |
+| **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
 | **Event-Bus & Engine-Manager** | ✅ Real | Ereignisgesteuerte Kommunikation zwischen unabhängigen Engines |
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
+| **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
 | **Vision / Automation / Browser …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
 
 ---
@@ -59,10 +63,11 @@ später einfach ergänzen.
 │                                                                │
 │   FastAPI + WebSocket  ◀──▶  EventBus  ◀──▶  EngineManager     │
 │                                                │               │
-│   ┌────────────┬──────────────┬───────────────┴────────────┐  │
-│   │ System     │ Conversation │ Memory  │ Voice · Vision …  │  │
-│   │ (psutil)   │ (Claude API) │(Obsidian)│  (Stubs)         │  │
-│   └────────────┴──────────────┴───────────────────────────-┘  │
+│   ┌──────────┬────────────┬────────┬──────────┬─────────────┐ │
+│   │ System   │Conversation│ Memory │ Weather  │ Mail/Kalender│ │
+│   │ (psutil) │(Claude API)│(Obsidian)│(Open-Meteo)│ (Google, opt.)│
+│   └──────────┴────────────┴────────┴──────────┴─────────────┘ │
+│              Vision · Automation · Browser · … (Stubs)         │
 │                                                                │
 │   SecurityGate  ·  PluginLoader  ·  Config                     │
 └────────────────────────────────────────────────────────────---┘
@@ -113,6 +118,11 @@ npm run tauri build      # erzeugt eine native Windows-App
 
 > Der Tauri-Build wird auf einem Windows-System durchgeführt. Siehe
 > [`docs/design-system.md`](./docs/design-system.md) und die Tauri-Doku.
+
+### 4 · (Optional) Gmail, Kalender & Handy-Zugriff
+
+Für echte Mail-/Kalender-Daten und um APHELIOS auf dem Handy zu installieren,
+siehe die Schritt-für-Schritt-Anleitung: [`docs/integrations.md`](./docs/integrations.md).
 
 ---
 

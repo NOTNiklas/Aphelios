@@ -3,24 +3,33 @@
 import { create } from "zustand";
 import type {
   BusMessage,
+  CalendarData,
   ConfirmationRequest,
   ConsoleMessage,
   Link,
+  MailData,
   SystemStats,
+  WeatherData,
 } from "../lib/types";
 
 interface HudState {
   link: Link;
   stats: SystemStats | null;
+  weather: WeatherData | null;
+  mail: MailData | null;
+  calendar: CalendarData | null;
   engines: Record<string, string>;
   ai: "claude" | "fallback";
   messages: ConsoleMessage[];
   confirmations: ConfirmationRequest[];
   listening: boolean;
+  /** Sprachausgabe (TTS) läuft gerade – für den pulsierenden Core relevant. */
+  speaking: boolean;
 
   // -- Aktionen (vom Transport / UI aufgerufen) --
   setLink: (link: Link) => void;
   setListening: (listening: boolean) => void;
+  setSpeaking: (speaking: boolean) => void;
   ingest: (msg: BusMessage) => void;
   addUserMessage: (id: string, text: string) => void;
   resolveConfirmation: (id: string) => void;
@@ -29,6 +38,9 @@ interface HudState {
 export const useHud = create<HudState>((set) => ({
   link: "connecting",
   stats: null,
+  weather: null,
+  mail: null,
+  calendar: null,
   engines: {},
   ai: "fallback",
   messages: [
@@ -40,9 +52,11 @@ export const useHud = create<HudState>((set) => ({
   ],
   confirmations: [],
   listening: false,
+  speaking: false,
 
   setLink: (link) => set({ link }),
   setListening: (listening) => set({ listening }),
+  setSpeaking: (speaking) => set({ speaking }),
 
   addUserMessage: (id, text) =>
     set((s) => ({ messages: [...s.messages, { id, role: "user", text }] })),
@@ -55,6 +69,15 @@ export const useHud = create<HudState>((set) => ({
       switch (msg.topic) {
         case "system.stats":
           return { stats: msg.data as unknown as SystemStats };
+
+        case "weather.update":
+          return { weather: msg.data as unknown as WeatherData };
+
+        case "mail.update":
+          return { mail: msg.data as unknown as MailData };
+
+        case "calendar.update":
+          return { calendar: msg.data as unknown as CalendarData };
 
         case "engine.status":
           return { engines: msg.data as Record<string, string> };

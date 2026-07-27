@@ -36,14 +36,30 @@ BROADCAST_TOPICS = [
     "confirmation.request",
     "memory.saved",
     "memory.result",
+    "weather.update",
+    "mail.update",
+    "calendar.update",
 ]
+
+#: Teilmenge von BROADCAST_TOPICS, die "aktuellen Zustand" statt einmaliger
+#: Ereignisse darstellt. Für diese Topics wird der letzte Stand zwischen-
+#: gespeichert und neu verbundenen Clients sofort nachgereicht – sonst verpasst
+#: ein HUD, das *nach* dem periodischen Abruf verbindet, den Wert bis zum
+#: nächsten Intervall (bei Wetter/Mail/Kalender u. U. mehrere Minuten lang,
+#: was wie ein Defekt aussieht, obwohl die Engine korrekt lief).
+REPLAYABLE_TOPICS = ["system.stats", "weather.update", "mail.update", "calendar.update"]
 
 
 class ConnectionManager:
-    """Hält aktive WebSocket-Verbindungen und broadcastet Events."""
+    """Hält aktive WebSocket-Verbindungen, broadcastet Events und merkt sich
+    den letzten Stand "zustandsartiger" Topics (siehe ``REPLAYABLE_TOPICS``)
+    für neu verbundene Clients.
+    """
 
-    def __init__(self) -> None:
+    def __init__(self, replayable_topics: list[str] | None = None) -> None:
         self._active: set[WebSocket] = set()
+        self._replayable = set(replayable_topics or [])
+        self._last_state: dict[str, dict] = {}
 
     async def connect(self, ws: WebSocket) -> None:
         await ws.accept()
@@ -53,6 +69,9 @@ class ConnectionManager:
         self._active.discard(ws)
 
     async def broadcast(self, message: dict) -> None:
+        topic = message.get("topic")
+        if topic in self._replayable:
+            self._last_state[topic] = message
         dead: list[WebSocket] = []
         for ws in list(self._active):
             try:
@@ -61,6 +80,18 @@ class ConnectionManager:
                 dead.append(ws)
         for ws in dead:
             self.disconnect(ws)
+
+    async def replay_last_state(self, ws: WebSocket) -> None:
+        """Schickt einem frisch verbundenen Client den zuletzt bekannten Stand
+        jedes zustandsartigen Topics nach.
+
+        Ohne das würde ein HUD, das erst *nach* dem periodischen Abruf einer
+        Engine verbindet, auf das nächste Intervall warten müssen – bei
+        Wetter/Mail/Kalender potenziell mehrere Minuten, was wie ein Defekt
+        wirkt, obwohl die Engine korrekt gelaufen ist.
+        """
+        for message in self._last_state.values():
+            await ws.send_json(message)
 
     @property
     def count(self) -> int:
@@ -77,7 +108,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     for engine_cls in ALL_ENGINES:
         manager.register(engine_cls(bus, config, security))
 
-    connections = ConnectionManager()
+    connections = ConnectionManager(replayable_topics=REPLAYABLE_TOPICS)
 
     async def _broadcast(event: Event) -> None:
         await connections.broadcast(
@@ -126,10 +157,12 @@ def create_app(config: Config | None = None) -> FastAPI:
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket) -> None:
         await connections.connect(ws)
-        # Begrüßungs-Snapshot: aktueller Engine-Status.
+        # Begrüßungs-Snapshot: aktueller Engine-Status …
         await ws.send_json(
             {"topic": "engine.status", "data": manager.status(), "source": "api"}
         )
+        # … plus der letzte bekannte Stand je "Zustands"-Topic.
+        await connections.replay_last_state(ws)
         try:
             while True:
                 message = await ws.receive_json()

@@ -19,6 +19,31 @@ export interface ConsoleMessage {
   streaming?: boolean;
 }
 
+/** Echte Wetterdaten von der WeatherEngine (Open-Meteo, kein API-Key nötig). */
+export interface WeatherData {
+  city?: string;
+  temperature?: number;
+  condition?: string;
+  humidity?: number;
+  wind_kmh?: number;
+  error?: string;
+  updated_at: number;
+}
+
+/** Echte Gmail-Daten von der MailEngine (optional, braucht Google-OAuth). */
+export interface MailData {
+  emails?: { from: string; subject: string; snippet: string }[];
+  error?: string;
+  updated_at: number;
+}
+
+/** Echte Termine von der CalendarEngine (optional, braucht Google-OAuth). */
+export interface CalendarData {
+  events?: { title: string; start: string; location?: string }[];
+  error?: string;
+  updated_at: number;
+}
+
 export interface ConfirmationRequest {
   id: string;
   action: string;

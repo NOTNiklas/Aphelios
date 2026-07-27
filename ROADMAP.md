@@ -17,11 +17,19 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 - ✅ SecurityGate (Bestätigung für gefährliche Aktionen)
 - ✅ Plugin-Loader + Manifest-Schema + Kategorie-Ordner
 - ✅ **SystemEngine** – echte Telemetrie (CPU/RAM/Disk/Netz/Temp/Akku)
-- ✅ **ConversationEngine** – Claude API mit Fallback
-- ✅ **MemoryEngine** – Obsidian-Markdown (Tags, Backlinks) + SQLite-Index
+- ✅ **ConversationEngine** – Claude API mit Fallback (mit klarer Fehlermeldung
+  statt stillem Rückfall, wenn ein Key vorhanden, die Anfrage aber scheitert)
+- ✅ **MemoryEngine** – Obsidian-Markdown (Tags, automatische Backlinks nach
+  Kategorie/gemeinsamen Tags) + SQLite-Index → nativer Obsidian-Graph-View
+  zeigt die Notizen als verbundenes Netz
+- ✅ **WeatherEngine** – echtes Wetter via Open-Meteo, kein API-Key nötig
+- ✅ **MailEngine** / **CalendarEngine** – echtes Gmail/Google-Kalender-Lesen,
+  optional (eigener Google-OAuth-Client nötig, siehe `docs/integrations.md`)
 - ✅ FastAPI + WebSocket-API
-- ✅ **HUD-Frontend** – Core, Gauges, Panels, animierte Konsole, Effekte
-- 🟡 **Voice** – Wake-Word „Aphelios" (Web Speech API im Browser)
+- ✅ **HUD-Frontend** – Core (pulsiert beim Antworten/Sprechen), Gauges,
+  Panels, animierte Konsole, Effekte
+- ✅ **Voice** – Wake-Word „Aphelios" + Sprachausgabe (Web Speech API im Browser)
+- ✅ **PWA** – auf dem Handy als App installierbar (gleiches WLAN)
 - ✅ Tauri-Shell-Scaffold (Desktop-Build auf Windows)
 - ✅ Dokumentation & Tests
 
@@ -58,8 +66,8 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 
 ## Alpha 1.5 — Second Brain (fortgeschritten)
 
+- ✅ Automatische Verlinkung & Graph-Aufbau (MemoryEngine, siehe oben)
 - ⬜ Vektorsuche (ChromaDB / Qdrant) über den Vault
-- ⬜ Automatische Verlinkung & Graph-Aufbau
 - ⬜ Proaktives Wiederfinden („Das hattest du vor 8 Monaten gelernt")
 - ⬜ Knowledge-Engine (RAG über Dokumentation)
 
@@ -70,20 +78,34 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 - ⬜ Office: Word/Excel/PowerPoint, PDF-Analyse
 - ⬜ VS Code / Claude Code Integration
 
+## Alpha 1.7 — Weitere App-Integrationen
+
+- ✅ Wetter (Open-Meteo), Gmail + Google Kalender (lesend) – siehe
+  `docs/integrations.md`
+- ⬜ WhatsApp – bewusst noch ohne Code (offizielle Business-API ist für
+  Unternehmen gedacht, inoffizielle Wege verletzen die Nutzungsbedingungen);
+  Entscheidung liegt beim Nutzer, siehe `docs/integrations.md`
+- ⬜ Schreibzugriff (Termine anlegen, Mails senden) – über SecurityGate
+  bestätigungspflichtig
+- ⬜ Discord, Steam, weitere Musik-Dienste
+
 ---
 
 ## Beta — Betriebssystem-Charakter
 
 - ⬜ AgentEngine: mehrere parallele AI-Agenten
-- ⬜ Music (Spotify), Calendar, Mail, Discord/Steam-Steuerung
+- ⬜ Music (Spotify)-Steuerung
 - ⬜ Proaktive Routinevorschläge auf Basis der Arbeitsweise
 - ⬜ Backups & Cloud-Sync
 
 ## Langfristige Vision
 
+- ✅ Handy-Zugriff als PWA (heute nutzbar, gleiches WLAN – `docs/integrations.md`)
+- ⬜ Native Handy-App (eigenständiges Projekt: Termine/Mails aktiv verwalten,
+  Push-Benachrichtigungen, Hintergrund-Sync)
 - ⬜ Smart Home / Home Assistant
 - ⬜ Lokale LLMs als Standard
-- ⬜ Handy-App + Web-Dashboard
+- ⬜ Web-Dashboard
 - ⬜ Multi-PC-Synchronisation, NAS, Raspberry-Pi-Nodes
 - ⬜ CAD-/3D-Unterstützung, KI-Code-Reviews, Trading-Dashboard
 

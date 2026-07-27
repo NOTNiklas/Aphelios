@@ -35,7 +35,7 @@ darauf hin, dass eine Bestätigung nötig ist.
 # Kurze, thematisch passende Offline-Antworten für den Fallback-Modus.
 _FALLBACK_REPLIES = {
     "greeting": "Systeme online. Ich bin bereit, Sir.",
-    "default": (
+    "no_key": (
         "Ich arbeite gerade im Offline-Modus – es ist kein AI-Schlüssel "
         "hinterlegt. Trage einen ANTHROPIC_API_KEY in die .env ein, und ich "
         "stehe dir mit voller Leistung zur Verfügung."
@@ -51,14 +51,16 @@ class ConversationEngine(BaseEngine):
     async def start(self) -> None:
         self._running = True
         self._client = None
+        self._init_error: str | None = None
         if self.config.has_anthropic:
             try:
                 import anthropic
 
                 self._client = anthropic.AsyncAnthropic(api_key=self.config.anthropic_api_key)
                 self.log.info("Claude API aktiv (%s)", self.config.anthropic_model)
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 self.log.exception("Anthropic-Client konnte nicht initialisiert werden")
+                self._init_error = str(exc)
         else:
             self.log.warning("Kein ANTHROPIC_API_KEY – ConversationEngine läuft im Fallback-Modus")
 
@@ -89,19 +91,37 @@ class ConversationEngine(BaseEngine):
                     collected.append(chunk)
                     await self.emit("chat.token", {"id": request_id, "text": chunk})
             reply = "".join(collected)
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             self.log.exception("Claude-Anfrage fehlgeschlagen – nutze Fallback")
-            await self._respond_fallback(text, request_id)
+            await self._respond_fallback(text, request_id, error=str(exc))
             return
         await self.emit("chat.response", {"id": request_id, "text": reply, "final": True})
 
     # -- Fallback -------------------------------------------------------------
-    async def _respond_fallback(self, text: str, request_id: str) -> None:
+    async def _respond_fallback(
+        self, text: str, request_id: str, error: str | None = None
+    ) -> None:
         lowered = text.lower()
-        if any(word in lowered for word in ("hallo", "hi", "hey", "aphelios")):
+        if error:
+            # Ein Key ist vorhanden, aber die Anfrage ist trotzdem gescheitert –
+            # das darf NICHT wie "kein Key hinterlegt" aussehen, sonst ist der
+            # eigentliche Fehler für den Nutzer unsichtbar.
+            reply = (
+                "Die Verbindung zur Claude API ist gerade gestört, obwohl ein "
+                f"API-Key hinterlegt ist. Fehlermeldung: {error[:200]}. Prüfe den "
+                "Key in der .env auf zusätzliche Leerzeichen/Anführungszeichen, "
+                "das Kontingent in der Anthropic Console und deine "
+                "Internetverbindung."
+            )
+        elif self._init_error:
+            reply = (
+                "Der Claude-Client konnte nicht gestartet werden: "
+                f"{self._init_error[:200]}"
+            )
+        elif any(word in lowered for word in ("hallo", "hi", "hey", "aphelios")):
             reply = _FALLBACK_REPLIES["greeting"]
         else:
-            reply = _FALLBACK_REPLIES["default"]
+            reply = _FALLBACK_REPLIES["no_key"]
 
         # Antwort zeichenweise streamen, damit sich das HUD echt anfühlt.
         for word in reply.split(" "):

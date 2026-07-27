@@ -23,7 +23,16 @@ except ImportError:  # pragma: no cover
 
 
 def _get(name: str, default: str) -> str:
-    return os.environ.get(name, default)
+    """Liest eine Umgebungsvariable und entfernt umschließende Leer-/Anführungszeichen.
+
+    Häufiger Stolperstein: ``KEY= wert`` (Leerzeichen nach dem ``=``) oder
+    ``KEY="wert"`` machen z. B. einen API-Key sonst unbemerkt ungültig – die
+    Anfrage schlägt dann fehl und die App fällt lautlos in den Fallback-Modus.
+    """
+    value = os.environ.get(name, default).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1].strip()
+    return value
 
 
 @dataclass(slots=True)
@@ -45,6 +54,16 @@ class Config:
 
     # --- System-Monitoring ---
     stats_interval: float = 2.0
+
+    # --- Wetter (Open-Meteo, kein API-Key nötig) ---
+    weather_city: str = "Berlin"
+    weather_interval: float = 900.0
+
+    # --- Google (Gmail + Kalender, eigener OAuth-Client nötig) ---
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_token_path: Path = Path("./data/google_token.json")
+    google_poll_interval: float = 300.0
 
     # --- API-Server ---
     api_host: str = "127.0.0.1"
@@ -68,6 +87,12 @@ class Config:
             vault_path=Path(_get("APHELIOS_VAULT_PATH", "./vault")),
             db_path=Path(_get("APHELIOS_DB_PATH", "./data/aphelios.sqlite")),
             stats_interval=float(_get("APHELIOS_STATS_INTERVAL", "2.0")),
+            weather_city=_get("APHELIOS_WEATHER_CITY", "Berlin"),
+            weather_interval=float(_get("APHELIOS_WEATHER_INTERVAL", "900")),
+            google_client_id=_get("GOOGLE_CLIENT_ID", ""),
+            google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
+            google_token_path=Path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
+            google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),
@@ -77,3 +102,8 @@ class Config:
     @property
     def has_anthropic(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def has_google(self) -> bool:
+        """True, sobald ``scripts/google_auth.py`` einmalig erfolgreich lief."""
+        return self.google_token_path.exists()

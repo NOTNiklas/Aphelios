@@ -1,4 +1,4 @@
-/** Untere AI-Konsole: animierte Antworten, Texteingabe und Sprach-Button. */
+/** Untere AI-Konsole: animierte Antworten, Texteingabe, Sprach-Button & -Status. */
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHud } from "../store/hud";
@@ -8,8 +8,9 @@ import { useWakeWord } from "../voice/useWakeWord";
 export function Console() {
   const messages = useHud((s) => s.messages);
   const listening = useHud((s) => s.listening);
+  const speaking = useHud((s) => s.speaking);
   const { sendChat } = useBackend();
-  const { supported, enabled, toggle } = useWakeWord((text) => sendChat(text));
+  const { supported, enabled, error, toggle } = useWakeWord((text) => sendChat(text));
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -32,11 +33,21 @@ export function Console() {
           <span className="h-1 w-1 rounded-full bg-hud-neon animate-pulse-soft" />
           <span className="font-hud text-xs tracking-[0.3em] text-hud-neon-dim">AI-KONSOLE</span>
         </div>
-        {listening && (
+        {error ? (
+          <span className="font-hud text-[11px] tracking-[0.15em] text-hud-danger">{error}</span>
+        ) : speaking ? (
+          <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon animate-pulse-soft">
+            ◉ SPRICHT
+          </span>
+        ) : listening ? (
           <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon animate-pulse-soft">
             ● HÖRT ZU
           </span>
-        )}
+        ) : enabled ? (
+          <span className="font-hud text-[11px] tracking-[0.25em] text-hud-neon-dim">
+            ◉ SPRACHE AKTIV — sag „Aphelios"
+          </span>
+        ) : null}
       </header>
 
       {/* Verlauf */}
@@ -78,12 +89,12 @@ export function Console() {
           className="flex-1 bg-transparent font-hud text-sm text-hud-neon placeholder:text-hud-neon/30 focus:outline-none"
           autoFocus
         />
-        {supported && (
+        {supported ? (
           <button
             type="button"
             onClick={toggle}
             aria-label={enabled ? "Sprachaktivierung deaktivieren" : "Sprachaktivierung aktivieren"}
-            title='Wake-Word: "Aphelios"'
+            title='Wake-Word: "Aphelios" — nur über localhost, Chrome/Edge, mit Mikrofon-Freigabe'
             className={`grid h-8 w-8 place-items-center rounded-full border transition-colors ${
               enabled
                 ? "border-hud-neon bg-hud-neon/20 shadow-glow-sm"
@@ -92,6 +103,13 @@ export function Console() {
           >
             <MicIcon active={enabled} />
           </button>
+        ) : (
+          <span
+            className="font-hud text-[10px] tracking-widest text-hud-neon/40"
+            title="Web Speech API benötigt Chrome oder Edge über http://localhost"
+          >
+            SPRACHE&nbsp;N/V
+          </span>
         )}
         <button
           type="submit"

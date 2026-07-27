@@ -79,7 +79,10 @@ Details in [`docs/security.md`](./docs/security.md).
 |---|---|---|
 | **SystemEngine** | ✅ real | System-Telemetrie via `psutil`, publisht `system.stats` |
 | **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback) |
-| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen, SQLite-Index |
+| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen mit automatischer Verlinkung, SQLite-Index |
+| **WeatherEngine** | ✅ real | Echtes Wetter via Open-Meteo (kein API-Key) |
+| **MailEngine** | ✅ real, optional | Gmail lesen (eigener Google-OAuth-Client nötig) |
+| **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen (dieselbe Anmeldung) |
 | ReasoningEngine | 🔌 stub | mehrstufiges Schlussfolgern |
 | PlanningEngine | 🔌 stub | Aufgaben in Schritte zerlegen |
 | AutomationEngine | 🔌 stub | PowerShell / pywinauto / Playwright |
