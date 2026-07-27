@@ -123,30 +123,6 @@ export function InfoPanels() {
           ))}
         </ul>
       </Panel>
-
-      <div className="flex gap-3">
-        <Panel title="Prozesse" delay={0.2} className="flex-1">
-          <ul>
-            {MOCK_INFO.prozesse.map((p) => (
-              <li
-                key={p.name}
-                className="flex items-center justify-between py-0.5 font-hud text-[13px] text-hud-neon/85"
-              >
-                <span className="truncate">{p.name}</span>
-                <span className="font-display tabular-nums text-hud-neon-dim">{p.cpu}%</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
-
-      <Panel title="Offene Fenster" delay={0.25}>
-        <ul>
-          {MOCK_INFO.fenster.map((w) => (
-            <Item key={w}>{w}</Item>
-          ))}
-        </ul>
-      </Panel>
     </div>
   );
 }

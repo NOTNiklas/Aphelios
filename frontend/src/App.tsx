@@ -44,14 +44,22 @@ export default function App() {
               inset-y statt top-1/2/-translate-y-1/2, damit die Spalte auf die
               zwischen TopBar und Konsole verfügbare Höhe begrenzt bleibt: bei
               wenig Platz (kleine Fenster/Laptop-Displays) scrollt sie intern,
-              statt TopBar/Konsole zu überlappen. */}
-          <div className="absolute inset-y-4 left-6 hidden overflow-y-auto lg:flex lg:flex-col lg:justify-center">
-            <SystemStats />
+              statt TopBar/Konsole zu überlappen. Zentrierung über m-auto statt
+              justify-center: justify-center würde bei zu großem Inhalt "unsafe"
+              zentrieren und den oberen Teil (z. B. das Wetter-Panel) über den
+              Rand hinaus unerreichbar verschieben – m-auto zentriert nur, wenn
+              Platz ist, und rutscht sonst sauber scrollbar nach oben. */}
+          <div className="absolute inset-y-4 left-6 hidden overflow-y-auto lg:flex lg:flex-col">
+            <div className="m-auto">
+              <SystemStats />
+            </div>
           </div>
 
           {/* Rechte Spalte: Info (gleiche Höhenbegrenzung wie links). */}
-          <div className="absolute inset-y-4 right-6 hidden overflow-y-auto lg:flex lg:flex-col lg:justify-center">
-            <InfoPanels />
+          <div className="absolute inset-y-4 right-6 hidden overflow-y-auto lg:flex lg:flex-col">
+            <div className="m-auto">
+              <InfoPanels />
+            </div>
           </div>
         </main>
 

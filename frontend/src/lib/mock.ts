@@ -42,13 +42,6 @@ export const MOCK_INFO = {
     { title: "Backup abgeschlossen", level: "ok" },
     { title: "Update für Docker verfügbar", level: "info" },
   ],
-  prozesse: [
-    { name: "code", cpu: 8.1 },
-    { name: "chrome", cpu: 5.4 },
-    { name: "python", cpu: 3.2 },
-    { name: "spotify", cpu: 1.1 },
-  ],
-  fenster: ["VS Code — aphelios", "Chrome — GitHub", "Terminal", "Obsidian"],
 };
 
 /** Eine Fallback-Antwort, die zeichenweise „gestreamt" wird. */
