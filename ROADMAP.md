@@ -7,7 +7,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 
 ---
 
-## Alpha 1.0 — MVP-Grundgerüst  *(dieser Stand)*
+## Alpha 1.0 — MVP-Grundgerüst
 
 **Ziel:** Lauffähiges, sichtbares Gerüst mit sauberer, erweiterbarer Architektur.
 
@@ -35,12 +35,20 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 
 ---
 
-## Alpha 1.1 — Reasoning & Planning
+## Alpha 1.1 — Reasoning & Planning  *(dieser Stand)*
 
-- ⬜ ReasoningEngine (mehrstufige Analyse, Werkzeug-Auswahl)
-- ⬜ PlanningEngine (Aufgabe → Schritte → Ausführung)
-- ⬜ Streaming-Antworten Ende-zu-Ende im HUD
-- ⬜ Persistenter Konversationskontext über MemoryEngine
+- ✅ **ReasoningEngine** – mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl
+  (Vault-Suche / System-Werte / Aufgaben-Zerlegung / direkte Antwort),
+  ausgelöst über `/denke <Frage>` im Chat
+- ✅ **PlanningEngine** – zerlegt Aufgaben in Schritte (`/plan <Aufgabe>`),
+  echte Anzeige + Abhaken im „Aufgaben"-Panel; automatische **Ausführung**
+  der Schritte ist AutomationEngine (Alpha 1.2) – hier nur Zerlegung + Tracking
+- ✅ Streaming-Antworten Ende-zu-Ende im HUD – bereits in Alpha 1.0 für die
+  ConversationEngine gebaut, jetzt bestätigt auch für Reasoning/Planning über
+  dieselbe `chat.token`/`chat.response`-Pipeline (keine Sonderlogik nötig)
+- ✅ Persistenter Konversationskontext über MemoryEngine – Gesprächsverlauf
+  übersteht einen Backend-Neustart (neuer `memory.kv.*`-Speicher), zusätzlich
+  fließen thematisch passende Vault-Notizen automatisch in den Kontext ein
 
 ## Alpha 1.2 — Windows-Automation *(nur Windows)*
 

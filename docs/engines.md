@@ -83,6 +83,65 @@ Nutzers (`docs/integrations.md`) – ohne diese bleiben sie inaktiv und das HUD
 zeigt weiterhin eine Mock-Vorschau. Rein lesend; Schreibzugriff ist eine
 spätere, über das SecurityGate bestätigungspflichtige Ausbaustufe.
 
+## Engines in Alpha 1.1
+
+### MemoryEngine – generischer KV-Store (neu)
+Zusätzlich zu Notizen/Suche kann die MemoryEngine jetzt auch beliebige,
+JSON-serialisierbare Werte unter einem Schlüssel persistieren – gedacht für
+internen Engine-Zustand, der einen Backend-Neustart überleben soll, aber
+keine eigene Obsidian-Notiz braucht:
+
+* `memory.kv.set` (in) – `{key, value}`
+* `memory.kv.get` (in) – `{id, key}` → antwortet mit `memory.kv.result`
+  `{id, key, value}` (`value: null` falls nicht vorhanden)
+
+Genutzt von der `ConversationEngine` für den Konversationsverlauf (siehe unten).
+
+### ConversationEngine – persistenter Kontext (erweitert)
+Führt jetzt einen Gesprächsverlauf (letzte `MAX_HISTORY_MESSAGES` Nachrichten)
+über mehrere Chat-Anfragen hinweg mit – vorher wurde jede Anfrage isoliert
+beantwortet. Der Verlauf wird über `memory.kv.set`/`memory.kv.get`
+(MemoryEngine) persistiert, übersteht also einen Backend-Neustart. Vor jeder
+Antwort fragt die Engine zusätzlich per `memory.search` thematisch passende
+Vault-Notizen ab und reicht sie als kurzen Kontext-Hinweis in den
+System-Prompt – der Vault wird damit tatsächlich mitgelesen, nicht nur
+beschrieben.
+
+### PlanningEngine (real)
+Zerlegt eine Aufgabe in konkrete Schritte. Auslösen im Chat mit
+`/plan <Aufgabe>` (z. B. `/plan Küche putzen und Wäsche waschen`) – der
+Server erkennt das Präfix und routet an `plan.request` statt an die normale
+`ConversationEngine`. Nutzt Claude zur Zerlegung; ohne `ANTHROPIC_API_KEY`
+greift eine einfache Heuristik (Aufzählungs-/Satzgrenzen wie „und", „,",
+„dann"). Der aktuelle Plan wird im HUD im „Aufgaben"-Panel angezeigt (echte
+Daten statt Mock-Vorschau) – ein Klick auf einen Schritt togglet ihn als
+erledigt (`plan.step.complete`). Verwaltet bewusst nur **einen** aktiven Plan
+(Alpha 1.1: ein Nutzer, ein Fokus).
+
+Bus-Schnittstelle: `plan.request` (in) `{id, task}` · `plan.step.complete`
+(in) `{index}` · `plan.update` (out, state-artig/replayable) `{id, task,
+steps: [{index, text, done}], created_at}`.
+
+### ReasoningEngine (real)
+Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl. Auslösen im Chat mit
+`/denke <Frage>`. Läuft in drei sichtbaren Schritten:
+
+1. **Werkzeug-Auswahl** – eine deterministische Heuristik (`select_tool`,
+   keine zweite LLM-Anfrage) entscheidet anhand von Schlüsselwörtern:
+   `memory` (Vault durchsuchen), `system` (aktuelle System-Werte), `plan`
+   (Aufgaben-Zerlegung wie `PlanningEngine`) oder `direct` (keine
+   Zusatzquelle).
+2. **Kontext sammeln** aus der gewählten Quelle – sichtbar im Chat-Verlauf,
+   bevor die eigentliche Antwort kommt.
+3. **Finale Antwort** über Claude (mit gesammeltem Kontext im System-Prompt)
+   oder ein ehrlicher Hinweis ohne API-Key.
+
+Wiederverwendet bewusst `chat.token`/`chat.response` (keine neuen
+Frontend-Topics) – das HUD zeigt Reasoning-Ausgaben wie jede normale
+APHELIOS-Antwort, nur mit sichtbaren Zwischenschritten davor. Das ist
+zugleich der Beweis, dass die Streaming-Pipeline auch für eine zweite,
+unabhängige Engine Ende-zu-Ende funktioniert.
+
 ### Stub-Engines
-Reasoning, Planning, Automation, Coding, Browser, Knowledge, Vision, Voice, Agent –
-vollständige Signaturen, aber noch keine Implementierung (siehe `ROADMAP.md`).
+Automation, Coding, Browser, Knowledge, Vision, Voice, Agent – vollständige
+Signaturen, aber noch keine Implementierung (siehe `ROADMAP.md`).

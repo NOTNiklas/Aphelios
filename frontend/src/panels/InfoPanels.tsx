@@ -1,13 +1,15 @@
-/** Rechte Spalte: Kalender, Mails, Aufgaben, Benachrichtigungen, Prozesse, Fenster.
+/** Rechte Spalte: Wetter, Kalender, Mails, Aufgaben.
  *
  * Kalender & Mails zeigen **echte Daten** (Google), sobald das Backend über
  * ``docs/integrations.md`` verbunden ist – ohne Verbindung erscheint eine
  * Vorschau mit Mock-Daten inkl. Hinweis, damit klar bleibt, was real ist und
- * was noch Beispieldaten sind. Die restlichen Panels sind für Alpha 1.0
- * bewusst noch Mock-Vorschauen (Roadmap: eigene Engines je Bereich).
+ * was noch Beispieldaten sind. Aufgaben zeigt den aktuellen Plan der
+ * ``PlanningEngine`` (Alpha 1.1, ausgelöst über "/plan <Aufgabe>" im Chat),
+ * solange noch kein Plan existiert dieselbe Mock-Vorschau wie die anderen.
  */
 import { Panel } from "../hud/Panel";
 import { MOCK_INFO } from "../lib/mock";
+import { useBackend } from "../lib/ws";
 import { useHud } from "../store/hud";
 import { Weather } from "./Weather";
 
@@ -37,6 +39,8 @@ function formatEventTime(iso: string): string {
 export function InfoPanels() {
   const calendar = useHud((s) => s.calendar);
   const mail = useHud((s) => s.mail);
+  const plan = useHud((s) => s.plan);
+  const { completeStep } = useBackend();
 
   return (
     <div className="flex w-64 flex-col gap-3">
@@ -105,23 +109,50 @@ export function InfoPanels() {
       </Panel>
 
       <Panel title="Aufgaben" delay={0.15}>
-        <ul>
-          {MOCK_INFO.aufgaben.map((t) => (
-            <li
-              key={t.title}
-              className="flex items-center gap-2 py-0.5 font-hud text-[13px] text-hud-neon/85"
-            >
-              <span
-                className={`grid h-3 w-3 shrink-0 place-items-center rounded-[3px] border ${
-                  t.done ? "border-hud-neon bg-hud-neon/30" : "border-hud-neon/50"
-                }`}
-              >
-                {t.done && <span className="text-[8px] leading-none text-hud-neon">✓</span>}
-              </span>
-              <span className={t.done ? "line-through opacity-60" : ""}>{t.title}</span>
-            </li>
-          ))}
-        </ul>
+        {plan ? (
+          <>
+            <p className="mb-1 truncate font-hud text-[11px] text-hud-neon/50">{plan.task}</p>
+            <ul>
+              {plan.steps.map((step) => (
+                <li
+                  key={step.index}
+                  onClick={() => completeStep(step.index)}
+                  className="flex cursor-pointer items-center gap-2 py-0.5 font-hud text-[13px] text-hud-neon/85"
+                >
+                  <span
+                    className={`grid h-3 w-3 shrink-0 place-items-center rounded-[3px] border ${
+                      step.done ? "border-hud-neon bg-hud-neon/30" : "border-hud-neon/50"
+                    }`}
+                  >
+                    {step.done && <span className="text-[8px] leading-none text-hud-neon">✓</span>}
+                  </span>
+                  <span className={step.done ? "line-through opacity-60" : ""}>{step.text}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <>
+            <ul>
+              {MOCK_INFO.aufgaben.map((t) => (
+                <li
+                  key={t.title}
+                  className="flex items-center gap-2 py-0.5 font-hud text-[13px] text-hud-neon/85"
+                >
+                  <span
+                    className={`grid h-3 w-3 shrink-0 place-items-center rounded-[3px] border ${
+                      t.done ? "border-hud-neon bg-hud-neon/30" : "border-hud-neon/50"
+                    }`}
+                  >
+                    {t.done && <span className="text-[8px] leading-none text-hud-neon">✓</span>}
+                  </span>
+                  <span className={t.done ? "line-through opacity-60" : ""}>{t.title}</span>
+                </li>
+              ))}
+            </ul>
+            <PreviewHint>Vorschau — "/plan Aufgabe" im Chat erstellt einen echten Plan</PreviewHint>
+          </>
+        )}
       </Panel>
     </div>
   );

@@ -16,12 +16,20 @@ zusätzliche Konfiguration in Obsidian nötig, nur der richtige Vault-Pfad
 Bus-Schnittstelle:
     * ``memory.note`` (in)  – ``{title, content, category?, tags?, links?}`` speichern
     * ``memory.search`` (in) – ``{id, query}`` → antwortet mit ``memory.result``
+    * ``memory.kv.set`` (in) – ``{key, value}`` – generischer, persistenter
+      Key-Value-Speicher für andere Engines (JSON-serialisierbarer ``value``).
+      Gedacht für internen Zustand, der einen Neustart überleben soll, aber
+      keine eigene Obsidian-Notiz braucht (z. B. der Konversationsverlauf der
+      ``ConversationEngine`` – siehe Alpha 1.1, ``docs/engines.md``).
+    * ``memory.kv.get`` (in) – ``{id, key}`` → antwortet mit ``memory.kv.result``
+      ``{id, key, value}`` (``value: null`` falls nicht vorhanden)
 
 Vektorsuche (ChromaDB) ist als spätere Ausbaustufe vorgesehen (siehe Roadmap).
 """
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 import time
@@ -83,10 +91,21 @@ class MemoryEngine(BaseEngine):
             )
             """
         )
+        self._db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS kv (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at REAL NOT NULL
+            )
+            """
+        )
         self._db.commit()
 
         self.bus.subscribe("memory.note", self.handle)
         self.bus.subscribe("memory.search", self._on_search)
+        self.bus.subscribe("memory.kv.set", self._on_kv_set)
+        self.bus.subscribe("memory.kv.get", self._on_kv_get)
         self.log.info("Vault bereit unter %s", self.vault.resolve())
 
     async def stop(self) -> None:
@@ -132,6 +151,27 @@ class MemoryEngine(BaseEngine):
         ).fetchall()
         results = [{"title": r[0], "category": r[1], "path": r[2]} for r in rows]
         await self.emit("memory.result", {"id": request_id, "query": query, "results": results})
+
+    async def _on_kv_set(self, event: Event) -> None:
+        """Speichert einen beliebigen, JSON-serialisierbaren Wert unter ``key``."""
+        key = (event.data.get("key") or "").strip()
+        if not key:
+            return
+        value = json.dumps(event.data.get("value"))
+        self._db.execute(
+            "INSERT INTO kv (key, value, updated_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+            (key, value, time.time()),
+        )
+        self._db.commit()
+
+    async def _on_kv_get(self, event: Event) -> None:
+        """Liest einen zuvor per ``memory.kv.set`` gespeicherten Wert zurück."""
+        key = (event.data.get("key") or "").strip()
+        request_id = event.data.get("id", "")
+        row = self._db.execute("SELECT value FROM kv WHERE key = ?", (key,)).fetchone()
+        value = json.loads(row[0]) if row else None
+        await self.emit("memory.kv.result", {"id": request_id, "key": key, "value": value})
 
     # -- intern ---------------------------------------------------------------
     def _classify(self, text: str) -> str:

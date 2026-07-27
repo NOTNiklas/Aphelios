@@ -7,6 +7,15 @@ die APHELIOS-Persönlichkeit (ruhig, präzise, deutsch, dezenter Humor).
 Ohne ``ANTHROPIC_API_KEY`` läuft die Engine im **Fallback-Modus** mit lokalen
 Standardantworten, damit das System jederzeit lauffähig bleibt.
 
+**Persistenter Konversationskontext (Alpha 1.1):** Die letzten Turns werden
+nicht mehr pro Anfrage vergessen, sondern als Gesprächsverlauf mitgeführt und
+über ``memory.kv.set``/``memory.kv.get`` (MemoryEngine) persistiert – ein
+Backend-Neustart „vergisst" das Gespräch also nicht mehr. Zusätzlich fragt die
+Engine vor jeder Antwort per ``memory.search`` thematisch passende
+Obsidian-Notizen ab und gibt sie als kurzen Kontext-Hinweis mit in den
+System-Prompt – der Vault wird damit zur echten zweiten Gehirnhälfte, nicht
+nur zum Ablageort.
+
 Erweiterung: OpenAI- und Ollama-Fallback sind als Hooks vorgesehen (Roadmap).
 """
 
@@ -15,7 +24,15 @@ from __future__ import annotations
 import asyncio
 
 from aphelios.core.engine import BaseEngine
-from aphelios.core.event_bus import Event
+from aphelios.core.event_bus import Event, request
+
+#: Wie viele Nachrichten (User+Aphelios zusammen) im Verlauf mitgeführt werden.
+#: Begrenzt Kontextgröße/-kosten; ~10 Austausche reichen für die meisten
+#: zusammenhängenden Gespräche.
+MAX_HISTORY_MESSAGES = 20
+
+#: Bus-Key, unter dem der Verlauf in der MemoryEngine-KV-Tabelle liegt.
+HISTORY_KV_KEY = "conversation_history"
 
 APHELIOS_PERSONA = """\
 Du bist APHELIOS – ein hochentwickelter Desktop-AI-Assistent im Stil von \
@@ -52,6 +69,10 @@ class ConversationEngine(BaseEngine):
         self._running = True
         self._client = None
         self._init_error: str | None = None
+        # Lazy geladen beim ersten chat.request (siehe _ensure_history_loaded) –
+        # nicht schon hier, weil die MemoryEngine parallel startet und ihre
+        # memory.kv.get-Subscription zu diesem Zeitpunkt noch fehlen könnte.
+        self._history: list[dict[str, str]] | None = None
         if self.config.has_anthropic:
             try:
                 import anthropic
@@ -71,21 +92,67 @@ class ConversationEngine(BaseEngine):
         request_id = event.data.get("id", "")
         if not text:
             return
+        await self._ensure_history_loaded()
         if self._client is None:
             await self._respond_fallback(text, request_id)
         else:
             await self._respond_claude(text, request_id)
 
+    # -- Persistenter Kontext (Alpha 1.1) --------------------------------------
+    async def _ensure_history_loaded(self) -> None:
+        """Lädt den Gesprächsverlauf einmalig aus der MemoryEngine (falls vorhanden).
+
+        Läuft erst beim ersten ``chat.request`` (nicht in ``start``): zu dem
+        Zeitpunkt sind garantiert alle Engines vollständig gestartet (das
+        FastAPI-Lifespan wartet auf ``manager.start_all()``, bevor der Server
+        Anfragen annimmt), sodass die MemoryEngine sicher bereits auf
+        ``memory.kv.get`` reagiert – anders als potenziell noch während
+        ``EngineManager.start_all`` selbst.
+        """
+        if self._history is not None:
+            return
+        result = await request(self.bus, "memory.kv.get", "memory.kv.result", {"key": HISTORY_KV_KEY})
+        value = (result or {}).get("value")
+        self._history = value if isinstance(value, list) else []
+
+    async def _remember_turn(self, user_text: str, reply: str) -> None:
+        """Hängt einen Austausch an den Verlauf an und persistiert ihn."""
+        assert self._history is not None
+        self._history.append({"role": "user", "content": user_text})
+        self._history.append({"role": "assistant", "content": reply})
+        del self._history[:-MAX_HISTORY_MESSAGES]
+        await self.emit("memory.kv.set", {"key": HISTORY_KV_KEY, "value": self._history})
+
+    async def _memory_context(self, text: str) -> str:
+        """Fragt thematisch passende Vault-Notizen ab (kurzer Kontext-Hinweis).
+
+        Best-effort: Bei Timeout/keinem Treffer wird einfach kein Zusatzkontext
+        angehängt – eine fehlende Vault-Antwort darf eine Chat-Antwort niemals
+        verzögern oder blockieren.
+        """
+        result = await request(self.bus, "memory.search", "memory.result", {"query": text}, timeout=1.5)
+        hits = (result or {}).get("results") or []
+        if not hits:
+            return ""
+        lines = [f'- „{h["title"]}" ({h["category"]})' for h in hits[:3]]
+        return (
+            "\n\nMögliche relevante Notizen aus dem Obsidian-Vault des Nutzers "
+            "(nutze sie nur, wenn sie wirklich zur Frage passen):\n" + "\n".join(lines)
+        )
+
     # -- Claude ---------------------------------------------------------------
     async def _respond_claude(self, text: str, request_id: str) -> None:
         assert self._client is not None
+        assert self._history is not None
         collected: list[str] = []
+        system = APHELIOS_PERSONA + await self._memory_context(text)
+        messages = [*self._history, {"role": "user", "content": text}]
         try:
             async with self._client.messages.stream(
                 model=self.config.anthropic_model,
                 max_tokens=1024,
-                system=APHELIOS_PERSONA,
-                messages=[{"role": "user", "content": text}],
+                system=system,
+                messages=messages,
             ) as stream:
                 async for chunk in stream.text_stream:
                     collected.append(chunk)
@@ -96,6 +163,7 @@ class ConversationEngine(BaseEngine):
             await self._respond_fallback(text, request_id, error=str(exc))
             return
         await self.emit("chat.response", {"id": request_id, "text": reply, "final": True})
+        await self._remember_turn(text, reply)
 
     # -- Fallback -------------------------------------------------------------
     async def _respond_fallback(

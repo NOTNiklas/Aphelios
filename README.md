@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.0 · **Status:** MVP-Grundgerüst · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.1 · **Status:** Reasoning & Planning · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,24 +17,32 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.0-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.1-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
-AI-Konsole, Sprachaktivierungs-Grundlage). Alle weiteren Module (Vision, Automation,
-Browser, Office, Smart Home …) sind als Schnittstellen vorbereitet und lassen sich
-später einfach ergänzen.
+AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Sprachaktivierung). Alle
+weiteren Module (Vision, Automation, Browser, Office, Smart Home …) sind als
+Schnittstellen vorbereitet und lassen sich später einfach ergänzen.
 
-> Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was in
-> Alpha 1.0 bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
+> Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was
+> bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
+
+**Neu in Alpha 1.1:** Die Chat-Konsole versteht zwei Slash-Befehle direkt im
+normalen Eingabefeld – `/plan <Aufgabe>` zerlegt eine Aufgabe in Schritte
+(echt im „Aufgaben"-Panel, abhakbar) und `/denke <Frage>` zeigt APHELIOS'
+Analyse sichtbar Schritt für Schritt (Werkzeug-Wahl → Kontext → Antwort),
+bevor die finale Antwort kommt. Details in [`docs/engines.md`](./docs/engines.md).
 
 ---
 
-## ✦ Was in Alpha 1.0 funktioniert
+## ✦ Was funktioniert
 
 | Bereich | Status | Beschreibung |
 |---|---|---|
 | **HUD-Oberfläche** | ✅ Real | Rotierender Core, System-Gauges, Info-Panels, animierte AI-Konsole |
 | **System-Monitoring** | ✅ Real | CPU / RAM / Disk / Netzwerk / Temperatur / Akku via `psutil` |
-| **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key) |
+| **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key), persistenter Kontext |
+| **Reasoning** | ✅ Real (Alpha 1.1) | Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl – `/denke <Frage>` im Chat |
+| **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
 | **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index |
 | **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Sprachausgabe (Web Speech API, Browser) |
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
@@ -159,5 +167,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.0 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.1 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

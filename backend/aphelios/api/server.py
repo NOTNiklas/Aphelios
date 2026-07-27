@@ -12,7 +12,6 @@ WebSocket-Clients weiter (Broadcast).
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -21,7 +20,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from aphelios.core.config import Config
-from aphelios.core.event_bus import Event, EventBus
+from aphelios.core.event_bus import Event, EventBus, request
 from aphelios.core.manager import EngineManager
 from aphelios.core.security import SecurityGate
 from aphelios.engines import ALL_ENGINES
@@ -39,6 +38,7 @@ BROADCAST_TOPICS = [
     "weather.update",
     "mail.update",
     "calendar.update",
+    "plan.update",
 ]
 
 #: Teilmenge von BROADCAST_TOPICS, die "aktuellen Zustand" statt einmaliger
@@ -47,7 +47,13 @@ BROADCAST_TOPICS = [
 #: ein HUD, das *nach* dem periodischen Abruf verbindet, den Wert bis zum
 #: nächsten Intervall (bei Wetter/Mail/Kalender u. U. mehrere Minuten lang,
 #: was wie ein Defekt aussieht, obwohl die Engine korrekt lief).
-REPLAYABLE_TOPICS = ["system.stats", "weather.update", "mail.update", "calendar.update"]
+REPLAYABLE_TOPICS = [
+    "system.stats",
+    "weather.update",
+    "mail.update",
+    "calendar.update",
+    "plan.update",
+]
 
 
 class ConnectionManager:
@@ -128,7 +134,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.0.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.1.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -141,7 +147,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.0.0a1",
+            "version": "1.1.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -180,40 +186,41 @@ def create_app(config: Config | None = None) -> FastAPI:
     return app
 
 
+#: Slash-Befehle im Chat-Eingabefeld – werden serverseitig erkannt und an die
+#: passende Engine geroutet, statt an die normale ConversationEngine. Kein
+#: Frontend-Änderung nötig: das bestehende Eingabefeld bleibt die einzige
+#: Interaktionsfläche (siehe ``docs/engines.md`` Alpha 1.1).
+_SLASH_COMMANDS = {
+    "/plan ": ("plan.request", "task"),
+    "/denke ": ("reasoning.request", "text"),
+}
+
+
 async def _handle_client_message(bus: EventBus, message: dict) -> None:
     """Verarbeitet eine vom HUD gesendete WebSocket-Nachricht."""
     msg_type = message.get("type")
     if msg_type == "chat":
-        await bus.publish(
-            Event(
-                "chat.request",
-                {"id": message.get("id", uuid.uuid4().hex), "text": message.get("text", "")},
-                source="hud",
-            )
-        )
+        text = message.get("text", "")
+        request_id = message.get("id", uuid.uuid4().hex)
+        lowered = text.strip().lower()
+        for prefix, (topic, field) in _SLASH_COMMANDS.items():
+            if lowered.startswith(prefix):
+                await bus.publish(
+                    Event(topic, {"id": request_id, field: text.strip()[len(prefix):].strip()}, source="hud")
+                )
+                return
+        await bus.publish(Event("chat.request", {"id": request_id, "text": text}, source="hud"))
     elif msg_type in ("confirmation.approve", "confirmation.deny"):
         await bus.publish(Event(msg_type, {"id": message.get("id")}, source="hud"))
     elif msg_type == "memory.note":
         await bus.publish(Event("memory.note", message.get("data", {}), source="hud"))
+    elif msg_type == "plan.step.complete":
+        await bus.publish(Event("plan.step.complete", {"index": message.get("index")}, source="hud"))
     else:
         logger.debug("Unbekannte HUD-Nachricht: %r", msg_type)
 
 
 async def _request_chat(bus: EventBus, text: str, timeout: float = 60.0) -> str:
     """Sendet eine Chat-Anfrage und wartet auf die vollständige Antwort."""
-    request_id = uuid.uuid4().hex
-    loop = asyncio.get_running_loop()
-    future: asyncio.Future[str] = loop.create_future()
-
-    def _on_response(event: Event) -> None:
-        if event.data.get("id") == request_id and not future.done():
-            future.set_result(event.data.get("text", ""))
-
-    bus.subscribe("chat.response", _on_response)
-    try:
-        await bus.publish(Event("chat.request", {"id": request_id, "text": text}, source="api"))
-        return await asyncio.wait_for(future, timeout)
-    except asyncio.TimeoutError:
-        return ""
-    finally:
-        bus.unsubscribe("chat.response", _on_response)
+    result = await request(bus, "chat.request", "chat.response", {"text": text}, timeout)
+    return (result or {}).get("text", "")

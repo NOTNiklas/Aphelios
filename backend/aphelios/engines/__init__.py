@@ -4,14 +4,14 @@ from aphelios.engines.calendar_engine import CalendarEngine
 from aphelios.engines.conversation_engine import ConversationEngine
 from aphelios.engines.mail_engine import MailEngine
 from aphelios.engines.memory_engine import MemoryEngine
+from aphelios.engines.planning_engine import PlanningEngine
+from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.stubs import (
     AgentEngine,
     AutomationEngine,
     BrowserEngine,
     CodingEngine,
     KnowledgeEngine,
-    PlanningEngine,
-    ReasoningEngine,
     VisionEngine,
     VoiceEngine,
 )

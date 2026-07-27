@@ -8,6 +8,7 @@ import type {
   ConsoleMessage,
   Link,
   MailData,
+  PlanData,
   SystemStats,
   WeatherData,
 } from "../lib/types";
@@ -18,6 +19,8 @@ interface HudState {
   weather: WeatherData | null;
   mail: MailData | null;
   calendar: CalendarData | null;
+  /** Aktueller Plan (PlanningEngine, ausgelöst über "/plan <Aufgabe>"). */
+  plan: PlanData | null;
   engines: Record<string, string>;
   ai: "claude" | "fallback";
   messages: ConsoleMessage[];
@@ -41,6 +44,7 @@ export const useHud = create<HudState>((set) => ({
   weather: null,
   mail: null,
   calendar: null,
+  plan: null,
   engines: {},
   ai: "fallback",
   messages: [
@@ -78,6 +82,9 @@ export const useHud = create<HudState>((set) => ({
 
         case "calendar.update":
           return { calendar: msg.data as unknown as CalendarData };
+
+        case "plan.update":
+          return { plan: msg.data as unknown as PlanData };
 
         case "engine.status":
           return { engines: msg.data as Record<string, string> };

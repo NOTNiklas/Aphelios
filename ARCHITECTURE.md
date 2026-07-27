@@ -75,16 +75,16 @@ Details in [`docs/security.md`](./docs/security.md).
 
 ## 3 · Engines (`backend/aphelios/engines/`)
 
-| Engine | Alpha 1.0 | Aufgabe |
+| Engine | Stand | Aufgabe |
 |---|---|---|
 | **SystemEngine** | ✅ real | System-Telemetrie via `psutil`, publisht `system.stats` |
-| **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback) |
-| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen mit automatischer Verlinkung, SQLite-Index |
+| **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback), persistenter Kontext über MemoryEngine |
+| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen mit automatischer Verlinkung, SQLite-Index + generischer KV-Store |
 | **WeatherEngine** | ✅ real | Echtes Wetter via Open-Meteo (kein API-Key) |
 | **MailEngine** | ✅ real, optional | Gmail lesen (eigener Google-OAuth-Client nötig) |
 | **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen (dieselbe Anmeldung) |
-| ReasoningEngine | 🔌 stub | mehrstufiges Schlussfolgern |
-| PlanningEngine | 🔌 stub | Aufgaben in Schritte zerlegen |
+| **ReasoningEngine** | ✅ real (Alpha 1.1) | Mehrstufige Analyse + sichtbare Werkzeug-Auswahl (`/denke`) |
+| **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
 | AutomationEngine | 🔌 stub | PowerShell / pywinauto / Playwright |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
 | BrowserEngine | 🔌 stub | Browser-Steuerung |

@@ -28,20 +28,6 @@ class _StubEngine(BaseEngine):
         self.log.info("[stub] %s empfing %r (noch nicht implementiert)", self.name, event.topic)
 
 
-class ReasoningEngine(_StubEngine):
-    """Mehrstufiges Schlussfolgern und Werkzeug-Auswahl. TODO: Roadmap Alpha 1.1."""
-
-    name = "reasoning"
-    topic = "reasoning.request"
-
-
-class PlanningEngine(_StubEngine):
-    """Zerlegt Aufgaben in ausführbare Schritte. TODO: Roadmap Alpha 1.1."""
-
-    name = "planning"
-    topic = "planning.request"
-
-
 class AutomationEngine(_StubEngine):
     """PowerShell / pywinauto / Playwright-Automatisierung. TODO: Roadmap Alpha 1.2.
 

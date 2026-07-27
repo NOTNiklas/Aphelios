@@ -85,7 +85,7 @@ export function Console() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Befehl oder Frage eingeben …"
+          placeholder="Frage eingeben … (oder /plan Aufgabe, /denke Frage)"
           className="flex-1 bg-transparent font-hud text-sm text-hud-neon placeholder:text-hud-neon/30 focus:outline-none"
           autoFocus
         />

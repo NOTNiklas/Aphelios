@@ -1,8 +1,9 @@
-"""Tests für den API-Server: WebSocket-State-Replay für neu verbundene Clients."""
+"""Tests für den API-Server: WebSocket-State-Replay und Chat-Nachrichten-Routing."""
 
 from __future__ import annotations
 
-from aphelios.api.server import ConnectionManager
+from aphelios.api.server import ConnectionManager, _handle_client_message
+from aphelios.core.event_bus import Event, EventBus
 
 
 class _FakeWebSocket:
@@ -67,3 +68,52 @@ async def test_broadcast_reaches_already_connected_clients():
 
     assert ws.sent == [{"topic": "system.stats", "data": {"cpu": 5}, "source": "system"}]
     assert manager.count == 1
+
+
+# -- Chat-Nachrichten-Routing (Alpha 1.1: /plan, /denke Slash-Befehle) -------
+async def test_plain_chat_message_routes_to_chat_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("chat.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "x1", "text": "Hallo Aphelios"})
+
+    assert len(received) == 1
+    assert received[0].data["text"] == "Hallo Aphelios"
+
+
+async def test_plan_slash_command_routes_to_plan_request_not_chat():
+    bus = EventBus()
+    plan_events: list[Event] = []
+    chat_events: list[Event] = []
+    bus.subscribe("plan.request", lambda e: plan_events.append(e))
+    bus.subscribe("chat.request", lambda e: chat_events.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "x2", "text": "/plan Küche putzen und einkaufen"}
+    )
+
+    assert len(plan_events) == 1
+    assert plan_events[0].data["task"] == "Küche putzen und einkaufen"
+    assert chat_events == []
+
+
+async def test_denke_slash_command_routes_to_reasoning_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("reasoning.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "x3", "text": "/denke Warum ist der Himmel blau?"})
+
+    assert len(received) == 1
+    assert received[0].data["text"] == "Warum ist der Himmel blau?"
+
+
+async def test_plan_step_complete_message_routes_correctly():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("plan.step.complete", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "plan.step.complete", "index": 2})
+
+    assert received[0].data["index"] == 2

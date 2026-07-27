@@ -92,6 +92,14 @@ class Backend {
     }
   }
 
+  /** Togglet einen Plan-Schritt (Checkbox im Aufgaben-Panel). Offline: no-op –
+   * ohne Backend gibt es keine PlanningEngine, die den Zustand verwalten könnte. */
+  completeStep(index: number): void {
+    if (this.online) {
+      this.ws!.send(JSON.stringify({ type: "plan.step.complete", index }));
+    }
+  }
+
   /** Beantwortet eine Sicherheitsabfrage. */
   respondConfirmation(id: string, approve: boolean): void {
     useHud.getState().resolveConfirmation(id);
@@ -129,6 +137,7 @@ export function useBackend() {
   }, []);
   return {
     sendChat: (text: string) => backend.sendChat(text),
+    completeStep: (index: number) => backend.completeStep(index),
     respondConfirmation: (id: string, approve: boolean) =>
       backend.respondConfirmation(id, approve),
   };

@@ -44,6 +44,21 @@ export interface CalendarData {
   updated_at: number;
 }
 
+/** Ein Schritt eines von der PlanningEngine erstellten Plans (Alpha 1.1). */
+export interface PlanStep {
+  index: number;
+  text: string;
+  done: boolean;
+}
+
+/** Aktueller Plan – ausgelöst über "/plan <Aufgabe>" im Chat. */
+export interface PlanData {
+  id: string;
+  task: string;
+  steps: PlanStep[];
+  created_at: number;
+}
+
 export interface ConfirmationRequest {
   id: string;
   action: string;

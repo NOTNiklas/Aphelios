@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -100,3 +101,34 @@ class EventBus:
             for result in results:
                 if isinstance(result, Exception):
                     logger.error("async handler for %r failed: %r", event.topic, result)
+
+
+async def request(
+    bus: EventBus,
+    request_topic: str,
+    response_topic: str,
+    data: dict[str, Any],
+    timeout: float = 2.0,
+) -> dict[str, Any] | None:
+    """Publiziert ein Event mit generierter ``id`` und wartet auf die passende
+    Antwort auf ``response_topic`` (Anfrage/Antwort-Muster über den Bus, z. B.
+    ``memory.search`` → ``memory.result``). Gibt ``None`` bei Timeout zurück,
+    statt eine Exception zu werfen – Aufrufer sollen ohne Antwort weiterlaufen
+    können (z. B. Kontext-Anreicherung, die optional ist).
+    """
+    request_id = uuid.uuid4().hex
+    loop = asyncio.get_running_loop()
+    future: asyncio.Future[dict[str, Any]] = loop.create_future()
+
+    def _on_response(event: Event) -> None:
+        if event.data.get("id") == request_id and not future.done():
+            future.set_result(event.data)
+
+    bus.subscribe(response_topic, _on_response)
+    try:
+        await bus.publish(Event(request_topic, {**data, "id": request_id}))
+        return await asyncio.wait_for(future, timeout)
+    except asyncio.TimeoutError:
+        return None
+    finally:
+        bus.unsubscribe(response_topic, _on_response)
