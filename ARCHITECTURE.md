@@ -85,7 +85,7 @@ Details in [`docs/security.md`](./docs/security.md).
 | **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen (dieselbe Anmeldung) |
 | **ReasoningEngine** | ✅ real (Alpha 1.1) | Mehrstufige Analyse + sichtbare Werkzeug-Auswahl (`/denke`) |
 | **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
-| AutomationEngine | 🔌 stub | PowerShell / pywinauto / Playwright |
+| **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
 | BrowserEngine | 🔌 stub | Browser-Steuerung |
 | KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |

@@ -143,5 +143,55 @@ zugleich der Beweis, dass die Streaming-Pipeline auch für eine zweite,
 unabhängige Engine Ende-zu-Ende funktioniert.
 
 ### Stub-Engines
-Automation, Coding, Browser, Knowledge, Vision, Voice, Agent – vollständige
-Signaturen, aber noch keine Implementierung (siehe `ROADMAP.md`).
+Coding, Browser, Knowledge, Vision, Voice, Agent – vollständige Signaturen,
+aber noch keine Implementierung (siehe `ROADMAP.md`).
+
+## Engines in Alpha 1.2
+
+### AutomationEngine (real, erste Ausbaustufe)
+PowerShell-Ausführung, Datei-Operationen und Programme starten/schließen –
+**jede** schreibende/löschende Aktion läuft zwingend über das SecurityGate
+(`docs/security.md`), es gibt keinen Pfad ohne ausdrückliche Bestätigung.
+
+Auslösen im Chat (Slash-Befehle, direkt vom Nutzer getippt – nicht von einer
+AI-Entscheidung, damit kein Prompt-Injection-Pfad zu echten Systemaktionen
+führt):
+
+| Befehl | Aktion | Risiko |
+|---|---|---|
+| `/run <PowerShell-Befehl>` | `run_powershell` | CONFIRM, bei zerstörerischen Mustern (Registry, Formatierung, Deinstallation, Neustart …) DANGEROUS |
+| `/oeffne <Programmname>` | `open_app` | CONFIRM |
+| `/schliesse <Programmname>` | `close_app` | CONFIRM |
+| `/loesche <Pfad>` | `delete_path` (Datei oder Ordner, automatisch erkannt) | CONFIRM |
+| `/downloads` | `downloads` – listet den Downloads-Ordner | nur lesend, kein Gate nötig |
+
+Zusätzlich (bisher nur über den Bus, kein eigener Slash-Befehl):
+`list_dir`, `find_files` (beide nur lesend), `create_folder`, `create_file`,
+`move_file`.
+
+APHELIOS zielt auf Windows (siehe README) – auf anderen Plattformen (z. B.
+in dieser Entwicklungsumgebung) geben PowerShell-Ausführung und
+Programm-Start einen ehrlichen „nicht unterstützt"-Hinweis zurück statt zu
+crashen, dasselbe Muster wie GPU/Temperatur in der SystemEngine.
+
+**Bewusst NICHT in dieser ersten Ausbaustufe:**
+
+- **Programme installieren/deinstallieren** – der Mechanismus (winget? eine
+  feste Allowlist? beliebige Installer-Pfade?) ist eine echte
+  Sicherheitsabwägung, keine rein technische Entscheidung. Braucht erst eine
+  bewusste Entscheidung des Nutzers, genau wie WhatsApp in
+  `docs/integrations.md`.
+- **pywinauto-Fensterinteraktion** – erfordert eine echte, laufende
+  Windows-Desktop-Sitzung zum Testen (UI Automation), die in dieser
+  Entwicklungsumgebung (Linux, ohne Display) grundsätzlich nicht verfügbar
+  ist. Blind implementieren, ohne es je laufen zu sehen, wäre unseriös.
+
+**Wichtiger Architektur-Fix in diesem Zug:** Der WebSocket-Endpunkt
+verarbeitete eingehende Nachrichten bisher sequenziell (`await` statt Task).
+Eine Engine, die über das SecurityGate auf eine Bestätigung wartet, wartet
+damit auf die *nächste* Nachricht auf genau derselben Verbindung – die
+Bestätigung des Nutzers. Da die Verbindung aber noch mit der vorherigen
+Nachricht "beschäftigt" war, konnte diese Bestätigung nie ankommen
+(Deadlock, endete nach 120 s in einem automatischen Deny). Jetzt wird jede
+eingehende Nachricht als eigener Task eingeplant, siehe
+`backend/tests/test_ws_integration.py` für den Regressionstest.

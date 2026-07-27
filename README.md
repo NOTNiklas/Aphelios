@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.1 · **Status:** Reasoning & Planning · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.2 · **Status:** Windows-Automation · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,20 +17,28 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.1-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.2-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
-AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Sprachaktivierung). Alle
-weiteren Module (Vision, Automation, Browser, Office, Smart Home …) sind als
-Schnittstellen vorbereitet und lassen sich später einfach ergänzen.
+AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Windows-Automation,
+Sprachaktivierung). Alle weiteren Module (Vision, Browser, Office, Smart Home …)
+sind als Schnittstellen vorbereitet und lassen sich später einfach ergänzen.
 
 > Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was
 > bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
 
-**Neu in Alpha 1.1:** Die Chat-Konsole versteht zwei Slash-Befehle direkt im
-normalen Eingabefeld – `/plan <Aufgabe>` zerlegt eine Aufgabe in Schritte
-(echt im „Aufgaben"-Panel, abhakbar) und `/denke <Frage>` zeigt APHELIOS'
-Analyse sichtbar Schritt für Schritt (Werkzeug-Wahl → Kontext → Antwort),
-bevor die finale Antwort kommt. Details in [`docs/engines.md`](./docs/engines.md).
+**Slash-Befehle in der Chat-Konsole** (direkt im normalen Eingabefeld, keine
+separate UI nötig):
+
+| Befehl | Wirkung |
+|---|---|
+| `/plan <Aufgabe>` | Zerlegt eine Aufgabe in Schritte – echt im „Aufgaben"-Panel, abhakbar |
+| `/denke <Frage>` | Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort) |
+| `/run <PowerShell-Befehl>` | Führt einen Befehl aus – **immer mit Bestätigungsdialog** |
+| `/oeffne <Programm>` / `/schliesse <Programm>` | Startet/beendet ein Programm – mit Bestätigung |
+| `/loesche <Pfad>` | Löscht eine Datei/einen Ordner – mit Bestätigung |
+| `/downloads` | Listet den Downloads-Ordner (nur lesend) |
+
+Details in [`docs/engines.md`](./docs/engines.md).
 
 ---
 
@@ -43,6 +51,7 @@ bevor die finale Antwort kommt. Details in [`docs/engines.md`](./docs/engines.md
 | **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key), persistenter Kontext |
 | **Reasoning** | ✅ Real (Alpha 1.1) | Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl – `/denke <Frage>` im Chat |
 | **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
+| **Automation** | ✅ Real (Alpha 1.2, Windows) | PowerShell, Datei-Operationen, Programme starten/schließen – immer mit Bestätigung |
 | **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index |
 | **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Sprachausgabe (Web Speech API, Browser) |
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
@@ -52,7 +61,7 @@ bevor die finale Antwort kommt. Details in [`docs/engines.md`](./docs/engines.md
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
-| **Vision / Automation / Browser …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
+| **Vision / Browser / Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
 
 ---
 
@@ -167,5 +176,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.1 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.2 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

@@ -35,7 +35,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 
 ---
 
-## Alpha 1.1 — Reasoning & Planning  *(dieser Stand)*
+## Alpha 1.1 — Reasoning & Planning
 
 - ✅ **ReasoningEngine** – mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl
   (Vault-Suche / System-Werte / Aufgaben-Zerlegung / direkte Antwort),
@@ -50,13 +50,25 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   übersteht einen Backend-Neustart (neuer `memory.kv.*`-Speicher), zusätzlich
   fließen thematisch passende Vault-Notizen automatisch in den Kontext ein
 
-## Alpha 1.2 — Windows-Automation *(nur Windows)*
+## Alpha 1.2 — Windows-Automation *(nur Windows, dieser Stand)*
 
-- ⬜ AutomationEngine: PowerShell-Ausführung (über SecurityGate)
-- ⬜ Programme starten/schließen/installieren/deinstallieren
-- ⬜ Datei-Operationen (suchen/erstellen/verschieben/löschen mit Bestätigung)
-- ⬜ pywinauto-Fensterinteraktion
-- ⬜ Explorer / Downloads organisieren
+- ✅ **AutomationEngine: PowerShell-Ausführung** (über SecurityGate) –
+  `/run <Befehl>`, Risiko-Einstufung erkennt zusätzlich besonders
+  zerstörerische Muster (Registry, Formatierung, Deinstallation, Neustart …)
+- 🟡 **Programme starten/schließen** – `/oeffne`, `/schliesse` (real,
+  über SecurityGate). **Installieren/deinstallieren bewusst noch nicht**:
+  der Mechanismus (winget? Allowlist? beliebige Installer?) ist eine echte
+  Sicherheitsabwägung, die eine bewusste Entscheidung des Nutzers braucht –
+  genau wie WhatsApp in `docs/integrations.md`.
+- ✅ **Datei-Operationen** (suchen/erstellen/verschieben/löschen mit
+  Bestätigung) – `list_dir`, `find_files`, `create_folder`, `create_file`,
+  `move_file`, `delete_path` (`/loesche`)
+- ⬜ pywinauto-Fensterinteraktion – erfordert eine echte, laufende
+  Windows-Desktop-Sitzung zum Testen (UI Automation), die in der
+  Entwicklungsumgebung (Linux, ohne Display) nicht verfügbar ist
+- ✅ Explorer/Downloads organisieren – `/downloads` listet den
+  Downloads-Ordner (nur lesend, weitere Organisation über die
+  Datei-Operationen oben)
 
 ## Alpha 1.3 — Voice (vollwertig)
 

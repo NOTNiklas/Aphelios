@@ -28,16 +28,6 @@ class _StubEngine(BaseEngine):
         self.log.info("[stub] %s empfing %r (noch nicht implementiert)", self.name, event.topic)
 
 
-class AutomationEngine(_StubEngine):
-    """PowerShell / pywinauto / Playwright-Automatisierung. TODO: Roadmap Alpha 1.2.
-
-    Alle Aktionen müssen später über ``self.security.request(...)`` laufen.
-    """
-
-    name = "automation"
-    topic = "automation.request"
-
-
 class CodingEngine(_StubEngine):
     """Code schreiben, refactoren, Git/GitHub, Docker, WSL. TODO: Roadmap Alpha 1.6."""
 

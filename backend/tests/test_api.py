@@ -117,3 +117,66 @@ async def test_plan_step_complete_message_routes_correctly():
     await _handle_client_message(bus, {"type": "plan.step.complete", "index": 2})
 
     assert received[0].data["index"] == 2
+
+
+# -- Chat-Nachrichten-Routing (Alpha 1.2: Automatisierungs-Slash-Befehle) -----
+async def test_run_slash_command_routes_to_automation_with_action():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a1", "text": "/run Get-Process"})
+
+    assert len(received) == 1
+    assert received[0].data["action"] == "run_powershell"
+    assert received[0].data["command"] == "Get-Process"
+
+
+async def test_oeffne_slash_command_routes_to_automation_open_app():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a2", "text": "/oeffne notepad"})
+
+    assert received[0].data == {"action": "open_app", "name": "notepad", "id": "a2"}
+
+
+async def test_schliesse_slash_command_routes_to_automation_close_app():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a3", "text": "/schliesse spotify"})
+
+    assert received[0].data == {"action": "close_app", "name": "spotify", "id": "a3"}
+
+
+async def test_loesche_slash_command_routes_to_automation_delete_path():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a4", "text": "/loesche C:\\temp\\alt.txt"})
+
+    assert received[0].data == {"action": "delete_path", "path": "C:\\temp\\alt.txt", "id": "a4"}
+
+
+async def test_downloads_noarg_slash_command_routes_to_automation():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a5", "text": "/downloads"})
+
+    assert received[0].data == {"action": "downloads", "id": "a5"}
+
+
+async def test_downloads_command_is_case_insensitive():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("automation.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "a6", "text": "/Downloads"})
+
+    assert len(received) == 1

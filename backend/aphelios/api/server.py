@@ -12,6 +12,7 @@ WebSocket-Clients weiter (Broadcast).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from contextlib import asynccontextmanager
@@ -134,7 +135,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.1.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.2.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -147,7 +148,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.1.0a1",
+            "version": "1.2.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -172,7 +173,14 @@ def create_app(config: Config | None = None) -> FastAPI:
         try:
             while True:
                 message = await ws.receive_json()
-                await _handle_client_message(bus, message)
+                # Als Task einplanen statt zu awaiten: bus.publish() wartet
+                # intern, bis alle Subscriber (inkl. Engine-Handler) fertig
+                # sind – und ein Handler kann über das SecurityGate auf genau
+                # die NÄCHSTE Nachricht auf dieser selben Verbindung warten
+                # (die Bestätigung des Nutzers). Würde die Schleife hier
+                # blockieren, käme diese Bestätigung nie an → Deadlock.
+                # Reproduziert & regressionsgetestet in test_ws_automation.py.
+                asyncio.create_task(_handle_client_message_safe(bus, message))
         except WebSocketDisconnect:
             connections.disconnect(ws)
         except Exception:  # noqa: BLE001
@@ -186,13 +194,24 @@ def create_app(config: Config | None = None) -> FastAPI:
     return app
 
 
-#: Slash-Befehle im Chat-Eingabefeld – werden serverseitig erkannt und an die
-#: passende Engine geroutet, statt an die normale ConversationEngine. Kein
-#: Frontend-Änderung nötig: das bestehende Eingabefeld bleibt die einzige
-#: Interaktionsfläche (siehe ``docs/engines.md`` Alpha 1.1).
-_SLASH_COMMANDS = {
-    "/plan ": ("plan.request", "task"),
-    "/denke ": ("reasoning.request", "text"),
+#: Slash-Befehle mit Argument im Chat-Eingabefeld – werden serverseitig
+#: erkannt und an die passende Engine geroutet, statt an die normale
+#: ConversationEngine. Kein Frontend-Änderung nötig: das bestehende
+#: Eingabefeld bleibt die einzige Interaktionsfläche (siehe
+#: ``docs/engines.md``). Format: prefix -> (topic, feld_für_das_argument,
+#: feste_zusatzfelder).
+_SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
+    "/plan ": ("plan.request", "task", {}),
+    "/denke ": ("reasoning.request", "text", {}),
+    "/run ": ("automation.request", "command", {"action": "run_powershell"}),
+    "/oeffne ": ("automation.request", "name", {"action": "open_app"}),
+    "/schliesse ": ("automation.request", "name", {"action": "close_app"}),
+    "/loesche ": ("automation.request", "path", {"action": "delete_path"}),
+}
+
+#: Slash-Befehle ganz ohne Argument.
+_NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
+    "/downloads": ("automation.request", {"action": "downloads"}),
 }
 
 
@@ -203,12 +222,18 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         text = message.get("text", "")
         request_id = message.get("id", uuid.uuid4().hex)
         lowered = text.strip().lower()
-        for prefix, (topic, field) in _SLASH_COMMANDS.items():
+
+        if lowered in _NOARG_SLASH_COMMANDS:
+            topic, payload = _NOARG_SLASH_COMMANDS[lowered]
+            await bus.publish(Event(topic, {**payload, "id": request_id}, source="hud"))
+            return
+
+        for prefix, (topic, field, payload) in _SLASH_COMMANDS.items():
             if lowered.startswith(prefix):
-                await bus.publish(
-                    Event(topic, {"id": request_id, field: text.strip()[len(prefix):].strip()}, source="hud")
-                )
+                arg = text.strip()[len(prefix):].strip()
+                await bus.publish(Event(topic, {**payload, field: arg, "id": request_id}, source="hud"))
                 return
+
         await bus.publish(Event("chat.request", {"id": request_id, "text": text}, source="hud"))
     elif msg_type in ("confirmation.approve", "confirmation.deny"):
         await bus.publish(Event(msg_type, {"id": message.get("id")}, source="hud"))
@@ -218,6 +243,16 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(Event("plan.step.complete", {"index": message.get("index")}, source="hud"))
     else:
         logger.debug("Unbekannte HUD-Nachricht: %r", msg_type)
+
+
+async def _handle_client_message_safe(bus: EventBus, message: dict) -> None:
+    """Wie ``_handle_client_message``, aber fängt Fehler ab und protokolliert
+    sie, statt sie zu propagieren – läuft als eigenständiger Task (siehe
+    ``ws_endpoint``), es gibt also keinen umschließenden try/except mehr."""
+    try:
+        await _handle_client_message(bus, message)
+    except Exception:  # noqa: BLE001
+        logger.exception("Fehler bei der Verarbeitung einer HUD-Nachricht: %r", message)
 
 
 async def _request_chat(bus: EventBus, text: str, timeout: float = 60.0) -> str:
