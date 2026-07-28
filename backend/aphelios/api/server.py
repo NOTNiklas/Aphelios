@@ -221,6 +221,28 @@ _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
     "/fehler": ("vision.request", {"action": "find_error"}),
 }
 
+#: Einzige Quelle der Wahrheit für ``/help``/``/hilfe`` – bei jedem neuen
+#: Slash-Befehl HIER mitpflegen (siehe auch README.md-Tabelle,
+#: docs/engines.md), sonst veraltet die Übersicht sofort.
+_COMMAND_HELP: list[tuple[str, str]] = [
+    ("/plan <Aufgabe>", "Zerlegt eine Aufgabe in Schritte – echt im „Aufgaben\"-Panel, abhakbar"),
+    ("/denke <Frage>", "Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort)"),
+    ("/run <PowerShell-Befehl>", "Führt einen Befehl aus – immer mit Bestätigungsdialog"),
+    ("/oeffne <Programm>", "Startet ein Programm – mit Bestätigung"),
+    ("/schliesse <Programm>", "Beendet ein Programm – mit Bestätigung"),
+    ("/loesche <Pfad>", "Löscht eine Datei/einen Ordner – mit Bestätigung"),
+    ("/downloads", "Listet den Downloads-Ordner (nur lesend)"),
+    ("/sieh <Frage>", "Screenshot + Claude beschreibt/beantwortet – mit Bestätigung"),
+    ("/lies", "Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung"),
+    ("/fehler", "Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung"),
+    ("/help oder /hilfe", "Zeigt diese Übersicht"),
+]
+
+
+def _help_text() -> str:
+    lines = [f"{cmd} – {desc}" for cmd, desc in _COMMAND_HELP]
+    return "Verfügbare Befehle:\n" + "\n".join(lines)
+
 
 async def _handle_client_message(bus: EventBus, message: dict) -> None:
     """Verarbeitet eine vom HUD gesendete WebSocket-Nachricht."""
@@ -229,6 +251,16 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         text = message.get("text", "")
         request_id = message.get("id", uuid.uuid4().hex)
         lowered = text.strip().lower()
+
+        if lowered in ("/help", "/hilfe"):
+            help_text = _help_text()
+            for word in help_text.split(" "):
+                await bus.publish(Event("chat.token", {"id": request_id, "text": word + " "}, source="hud"))
+                await asyncio.sleep(0.01)
+            await bus.publish(
+                Event("chat.response", {"id": request_id, "text": help_text, "final": True}, source="hud")
+            )
+            return
 
         if lowered in _NOARG_SLASH_COMMANDS:
             topic, payload = _NOARG_SLASH_COMMANDS[lowered]

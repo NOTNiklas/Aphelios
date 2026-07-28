@@ -201,3 +201,90 @@ async def test_voice_transcribe_message_routes_correctly():
     await _handle_client_message(bus, {"type": "voice.transcribe", "id": "v2", "audio_base64": "AAAA"})
 
     assert received[0].data == {"id": "v2", "audio_base64": "AAAA"}
+
+
+# -- Chat-Nachrichten-Routing (Alpha 1.4: Vision-Slash-Befehle) ---------------
+async def test_sieh_with_question_routes_to_vision_describe():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("vision.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "vi1", "text": "/sieh Was steht da?"})
+
+    assert received[0].data == {"action": "describe", "question": "Was steht da?", "id": "vi1"}
+
+
+async def test_sieh_without_question_routes_to_vision_describe():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("vision.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "vi2", "text": "/sieh"})
+
+    assert received[0].data == {"action": "describe", "question": "", "id": "vi2"}
+
+
+async def test_lies_noarg_command_routes_to_vision_ocr():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("vision.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "vi3", "text": "/lies"})
+
+    assert received[0].data == {"action": "ocr", "id": "vi3"}
+
+
+async def test_fehler_noarg_command_routes_to_vision_find_error():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("vision.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "vi4", "text": "/fehler"})
+
+    assert received[0].data == {"action": "find_error", "id": "vi4"}
+
+
+# -- Chat-Nachrichten-Routing (/help, /hilfe) ---------------------------------
+async def test_help_command_lists_every_slash_command_without_hitting_an_engine():
+    bus = EventBus()
+    tokens: list[str] = []
+    responses: list[Event] = []
+    engine_events: list[Event] = []
+    bus.subscribe("chat.token", lambda e: tokens.append(e.data["text"]))
+    bus.subscribe("chat.response", lambda e: responses.append(e))
+    for topic in ("chat.request", "plan.request", "reasoning.request", "automation.request", "vision.request"):
+        bus.subscribe(topic, lambda e: engine_events.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "h1", "text": "/help"})
+
+    assert engine_events == []
+    assert len(responses) == 1
+    # Wie bei jeder anderen Engine hat die Token-Verkettung ein Leerzeichen
+    # mehr am Ende als der finale Text (jedes Token ist "wort "-getrennt) –
+    # harmlos, da das Frontend beim Empfang von chat.response den
+    # angezeigten Text ohnehin komplett ersetzt.
+    full_text = "".join(tokens)
+    assert full_text.strip() == responses[0].data["text"]
+    for command in ("/plan", "/denke", "/run", "/oeffne", "/schliesse", "/loesche", "/downloads", "/sieh", "/lies", "/fehler"):
+        assert command in full_text
+
+
+async def test_hilfe_alias_returns_identical_help_text():
+    bus = EventBus()
+    responses: list[Event] = []
+    bus.subscribe("chat.response", lambda e: responses.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "h2", "text": "/hilfe"})
+    await _handle_client_message(bus, {"type": "chat", "id": "h3", "text": "/help"})
+
+    assert responses[0].data["text"] == responses[1].data["text"]
+
+
+async def test_help_command_is_case_insensitive():
+    bus = EventBus()
+    responses: list[Event] = []
+    bus.subscribe("chat.response", lambda e: responses.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "h4", "text": "/HELP"})
+
+    assert len(responses) == 1

@@ -41,6 +41,7 @@ separate UI nötig):
 | `/sieh <Frage>` | Screenshot + Claude beschreibt/beantwortet – mit Bestätigung |
 | `/lies` | Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung |
 | `/fehler` | Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung |
+| `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
 
