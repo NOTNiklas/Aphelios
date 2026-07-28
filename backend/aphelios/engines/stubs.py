@@ -56,21 +56,6 @@ class VisionEngine(_StubEngine):
     topic = "vision.request"
 
 
-class VoiceEngine(_StubEngine):
-    """Whisper-STT + hochwertige TTS. TODO: Roadmap Alpha 1.3.
-
-    In Alpha 1.0 übernimmt das Frontend (Web Speech API) die Sprachaktivierung;
-    diese Engine definiert die spätere Backend-Pipeline.
-
-    Vorgesehene Bus-Schnittstelle:
-        * ``voice.transcript`` (in)  – erkannter Text vom Frontend/STT
-        * ``voice.speak`` (in)       – Text, der per TTS ausgegeben werden soll
-    """
-
-    name = "voice"
-    topic = "voice.speak"
-
-
 class AgentEngine(_StubEngine):
     """Orchestriert mehrere parallele AI-Agenten. TODO: Roadmap Beta."""
 

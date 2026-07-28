@@ -50,7 +50,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   übersteht einen Backend-Neustart (neuer `memory.kv.*`-Speicher), zusätzlich
   fließen thematisch passende Vault-Notizen automatisch in den Kontext ein
 
-## Alpha 1.2 — Windows-Automation *(nur Windows, dieser Stand)*
+## Alpha 1.2 — Windows-Automation *(nur Windows)*
 
 - ✅ **AutomationEngine: PowerShell-Ausführung** (über SecurityGate) –
   `/run <Befehl>`, Risiko-Einstufung erkennt zusätzlich besonders
@@ -70,12 +70,24 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   Downloads-Ordner (nur lesend, weitere Organisation über die
   Datei-Operationen oben)
 
-## Alpha 1.3 — Voice (vollwertig)
+## Alpha 1.3 — Voice (vollwertig)  *(dieser Stand)*
 
-- ⬜ Whisper STT (lokal oder API)
-- ⬜ Hochwertige TTS mit natürlicher, tiefer männlicher Stimme
-- ⬜ Streaming-Sprachdialog mit geringer Latenz
-- ⬜ Dauerhafter Zuhör-Modus bis „Stop / Danke Aphelios / Beenden / Ruhemodus"
+- 🟡 **Whisper STT (lokal)** – `voice.transcribe` über faster-whisper ist
+  real implementiert und getestet, aber noch nicht an eine
+  Aufnahme-Oberfläche im Frontend angebunden (z. B. Push-to-Talk); die
+  laufende Wake-Word-Erkennung nutzt weiterhin die bewährte Web Speech API,
+  siehe `docs/voice.md`
+- ✅ **Hochwertige TTS mit natürlicher, tiefer männlicher Stimme** – Piper
+  läuft lokal (kein API-Key, keine Kosten), `speak()` im Frontend nutzt sie
+  automatisch, sobald ein Modell konfiguriert ist; ohne Konfiguration
+  fällt es auf die Browser-Stimme zurück statt zu scheitern
+- ✅ Streaming-Sprachdialog mit geringer Latenz – Wake-Word-Erkennung und
+  Chat-Antwort-Streaming liefen bereits vorher live; TTS-Antworten spielen
+  jetzt ab, sobald das erste Audio-Paket da ist (kein Warten auf den
+  gesamten Dialog)
+- ✅ Dauerhafter Zuhör-Modus bis „Stop / Danke Aphelios / Beenden /
+  Ruhemodus" – bereits seit Alpha 1.0/1.1 über die Web Speech API gebaut,
+  hier nur bestätigt/unverändert
 
 ## Alpha 1.4 — Computer Vision
 

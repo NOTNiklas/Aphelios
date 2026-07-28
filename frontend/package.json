@@ -1,7 +1,7 @@
 {
   "name": "aphelios-frontend",
   "private": true,
-  "version": "1.2.0-alpha.1",
+  "version": "1.3.0-alpha.1",
   "type": "module",
   "description": "APHELIOS – Iron-Man-HUD Frontend (React + TS + Tailwind + Framer Motion)",
   "scripts": {

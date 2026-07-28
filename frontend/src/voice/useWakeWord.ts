@@ -1,4 +1,4 @@
-/** Sprachaktivierung „Aphelios" + Sprachausgabe über die Web Speech API.
+/** Sprachaktivierung „Aphelios" + Sprachausgabe.
  *
  * Ablauf (siehe docs/voice.md):
  *   1. Mikrofon-Button aktivieren → kontinuierliche Spracherkennung startet.
@@ -11,13 +11,33 @@
  *   5. Ist der Sprachmodus aktiv, liest APHELIOS seine Antworten vor (TTS) –
  *      solange spricht der Core-Kreis sichtbar mit (``speaking``-Zustand).
  *
- * Wichtig: Die Web Speech API läuft nur in Chromium-basierten Browsern
- * (Chrome/Edge) und nur in einem sicheren Kontext (``localhost`` oder HTTPS) –
- * NICHT über eine LAN-IP wie ``192.168.x.x``. In der späteren Tauri-Desktop-
- * App ersetzt die Backend-VoiceEngine diese Basis.
+ * **Sprachausgabe (Alpha 1.3):** ``speak()`` fragt zuerst die Backend-
+ * VoiceEngine (Piper – natürliche, tiefe Stimme, siehe docs/voice.md). Antwortet
+ * das Backend nicht rechtzeitig (kein Piper-Modell konfiguriert, Backend
+ * offline, Timeout), fällt automatisch die Browser-``speechSynthesis``-Stimme
+ * ein – das HUD bleibt also immer sprachfähig, nur eben mit unterschiedlicher
+ * Qualität, je nachdem was verfügbar ist.
+ *
+ * Wichtig: Die Web-Speech-API-Spracherkennung (Wake-Word) läuft nur in
+ * Chromium-basierten Browsern (Chrome/Edge) und nur in einem sicheren Kontext
+ * (``localhost`` oder HTTPS) – NICHT über eine LAN-IP wie ``192.168.x.x``.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBackend } from "../lib/ws";
 import { useHud } from "../store/hud";
+
+/** Dekodiert Backend-Audio (Base64-WAV) und spielt es ab. Löst auf, sobald
+ * die Wiedergabe beendet ist (oder fehlschlägt) – Aufrufer kann darauf warten,
+ * um den ``speaking``-Zustand exakt so lange wie die tatsächliche Wiedergabe zu halten. */
+function playBase64Wav(base64: string): Promise<HTMLAudioElement> {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const blob = new Blob([bytes], { type: "audio/wav" });
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  audio.addEventListener("ended", () => URL.revokeObjectURL(url), { once: true });
+  audio.addEventListener("error", () => URL.revokeObjectURL(url), { once: true });
+  return audio.play().then(() => audio);
+}
 
 const WAKE = "aphelios";
 const STOP_WORDS = ["danke aphelios", "ruhemodus", "beenden", "stop"];
@@ -56,15 +76,20 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const enabledRef = useRef(false);
   const cmdRef = useRef(onCommand);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const { requestVoiceAudio } = useBackend();
 
   // onCommand stabil halten, ohne das Setup-Effect neu auszulösen.
   useEffect(() => {
     cmdRef.current = onCommand;
   }, [onCommand]);
 
-  // -- Sprachausgabe (TTS) ---------------------------------------------------
-  const speak = useCallback((text: string) => {
-    if (!("speechSynthesis" in window) || !text.trim()) return;
+  // -- Sprachausgabe: Browser-Stimme (Fallback ohne/bei fehlgeschlagenem Backend) --
+  const speakBrowser = useCallback((text: string) => {
+    if (!("speechSynthesis" in window)) {
+      useHud.getState().setSpeaking(false);
+      return;
+    }
     const synth = window.speechSynthesis;
     synth.cancel(); // laufende Ausgabe abbrechen (kein Überlappen)
 
@@ -85,6 +110,50 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
 
     synth.speak(u);
   }, []);
+
+  // -- Sprachausgabe: versucht zuerst die Backend-VoiceEngine (Piper) -----------
+  const speak = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+
+      // Laufende Wiedergabe (Backend-Audio ODER Browser-Stimme) abbrechen,
+      // damit sich aufeinanderfolgende Antworten nicht überlappen.
+      currentAudioRef.current?.pause();
+      currentAudioRef.current = null;
+      try {
+        window.speechSynthesis?.cancel();
+      } catch {
+        /* egal */
+      }
+
+      requestVoiceAudio(trimmed).then((result) => {
+        if (!result) {
+          speakBrowser(trimmed); // kein Piper-Modell/Backend offline/Timeout
+          return;
+        }
+        useHud.getState().setSpeaking(true);
+        playBase64Wav(result.audioBase64)
+          .then((audio) => {
+            currentAudioRef.current = audio;
+            audio.addEventListener(
+              "ended",
+              () => {
+                if (currentAudioRef.current === audio) currentAudioRef.current = null;
+                useHud.getState().setSpeaking(false);
+              },
+              { once: true },
+            );
+          })
+          .catch(() => {
+            // Wiedergabe fehlgeschlagen (z. B. Autoplay-Policy) → Browser-Stimme.
+            useHud.getState().setSpeaking(false);
+            speakBrowser(trimmed);
+          });
+      });
+    },
+    [requestVoiceAudio, speakBrowser],
+  );
 
   // -- Spracherkennung einrichten (einmalig) --------------------------------
   useEffect(() => {
@@ -217,6 +286,8 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
       } catch {
         /* egal */
       }
+      currentAudioRef.current?.pause();
+      currentAudioRef.current = null;
       useHud.getState().setSpeaking(false);
     } else {
       enabledRef.current = true;

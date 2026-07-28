@@ -65,6 +65,21 @@ class Config:
     google_token_path: Path = Path("./data/google_token.json")
     google_poll_interval: float = 300.0
 
+    # --- Sprache (Alpha 1.3, optional: lokale Whisper-STT + Piper-TTS) ---
+    #: Piper-Sprachmodell (.onnx-Datei); ``None`` = TTS bleibt aus, Frontend
+    #: fällt automatisch auf die Browser-Stimme zurück. Modelle:
+    #: https://github.com/rhasspy/piper/blob/master/VOICES.md
+    #: Bewusst ``Path | None`` statt ``Path("")``: ``Path("")`` normalisiert
+    #: sich zu ``Path(".")`` (aktuelles Verzeichnis), das existiert immer –
+    #: eine reine Existenzprüfung würde "nicht konfiguriert" dadurch nie
+    #: erkennen.
+    piper_model_path: Path | None = None
+    #: faster-whisper-Modellgröße ("tiny"/"base"/"small"/"medium"/"large-v3")
+    #: – wird beim ersten Gebrauch automatisch heruntergeladen und lokal
+    #: zwischengespeichert (Hugging Face Hub).
+    whisper_model: str = "base"
+    whisper_device: str = "cpu"
+
     # --- API-Server ---
     api_host: str = "127.0.0.1"
     api_port: int = 8787
@@ -93,6 +108,11 @@ class Config:
             google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
             google_token_path=Path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
             google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
+            piper_model_path=(
+                Path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
+            ),
+            whisper_model=_get("APHELIOS_WHISPER_MODEL", "base"),
+            whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),
@@ -107,3 +127,8 @@ class Config:
     def has_google(self) -> bool:
         """True, sobald ``scripts/google_auth.py`` einmalig erfolgreich lief."""
         return self.google_token_path.exists()
+
+    @property
+    def has_piper(self) -> bool:
+        """True, sobald ein Piper-Sprachmodell konfiguriert ist (siehe docs/voice.md)."""
+        return self.piper_model_path is not None and self.piper_model_path.exists()

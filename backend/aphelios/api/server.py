@@ -40,6 +40,9 @@ BROADCAST_TOPICS = [
     "mail.update",
     "calendar.update",
     "plan.update",
+    "voice.audio",
+    "voice.transcript",
+    "voice.error",
 ]
 
 #: Teilmenge von BROADCAST_TOPICS, die "aktuellen Zustand" statt einmaliger
@@ -135,7 +138,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.2.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.3.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -148,7 +151,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.2.0a1",
+            "version": "1.3.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -241,6 +244,20 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(Event("memory.note", message.get("data", {}), source="hud"))
     elif msg_type == "plan.step.complete":
         await bus.publish(Event("plan.step.complete", {"index": message.get("index")}, source="hud"))
+    elif msg_type == "voice.speak":
+        request_id = message.get("id", uuid.uuid4().hex)
+        await bus.publish(
+            Event("voice.speak", {"id": request_id, "text": message.get("text", "")}, source="hud")
+        )
+    elif msg_type == "voice.transcribe":
+        request_id = message.get("id", uuid.uuid4().hex)
+        await bus.publish(
+            Event(
+                "voice.transcribe",
+                {"id": request_id, "audio_base64": message.get("audio_base64", "")},
+                source="hud",
+            )
+        )
     else:
         logger.debug("Unbekannte HUD-Nachricht: %r", msg_type)
 

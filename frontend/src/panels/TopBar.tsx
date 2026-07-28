@@ -26,7 +26,7 @@ export function TopBar() {
         <span className="font-display text-lg tracking-[0.4em] text-hud-neon text-glow">⬡</span>
         <span className="font-display text-xs tracking-[0.5em] text-hud-neon-dim">APHELIOS</span>
         <span className="hidden rounded border border-hud-neon/30 px-2 py-0.5 font-hud text-[10px] tracking-[0.3em] text-hud-neon/60 sm:inline-block">
-          ALPHA 1.2
+          ALPHA 1.3
         </span>
       </div>
 

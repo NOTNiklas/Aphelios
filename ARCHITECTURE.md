@@ -86,11 +86,11 @@ Details in [`docs/security.md`](./docs/security.md).
 | **ReasoningEngine** | ✅ real (Alpha 1.1) | Mehrstufige Analyse + sichtbare Werkzeug-Auswahl (`/denke`) |
 | **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
 | **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |
+| **VoiceEngine** | ✅ real, optional (Alpha 1.3) | Piper-TTS + faster-whisper-STT lokal, `voice.speak`/`voice.transcribe` |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
 | BrowserEngine | 🔌 stub | Browser-Steuerung |
 | KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |
 | VisionEngine | 🔌 stub | OCR, Bildschirm-Verständnis |
-| VoiceEngine | 🔌 stub | Whisper STT + hochwertige TTS |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und

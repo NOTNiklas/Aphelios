@@ -13,9 +13,9 @@ from aphelios.engines.stubs import (
     CodingEngine,
     KnowledgeEngine,
     VisionEngine,
-    VoiceEngine,
 )
 from aphelios.engines.system_engine import SystemEngine
+from aphelios.engines.voice_engine import VoiceEngine
 from aphelios.engines.weather_engine import WeatherEngine
 
 #: Alle Engine-Klassen, die der Standard-Bootstrap registriert.

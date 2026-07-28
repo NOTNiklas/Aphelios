@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.2 · **Status:** Windows-Automation · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.3 · **Status:** Voice (Piper-TTS + Whisper-STT) · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,11 +17,12 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.2-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.3-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
 AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Windows-Automation,
-Sprachaktivierung). Alle weiteren Module (Vision, Browser, Office, Smart Home …)
-sind als Schnittstellen vorbereitet und lassen sich später einfach ergänzen.
+lokale Sprachausgabe/-erkennung). Alle weiteren Module (Vision, Browser, Office,
+Smart Home …) sind als Schnittstellen vorbereitet und lassen sich später einfach
+ergänzen.
 
 > Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was
 > bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
@@ -53,7 +54,9 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
 | **Automation** | ✅ Real (Alpha 1.2, Windows) | PowerShell, Datei-Operationen, Programme starten/schließen – immer mit Bestätigung |
 | **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index |
-| **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Sprachausgabe (Web Speech API, Browser) |
+| **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Dauer-Zuhören (Web Speech API, Browser) |
+| **Sprachausgabe (TTS)** | ✅ Real, optional (Alpha 1.3) | Piper – natürliche, tiefe Stimme lokal, kein API-Key; Fallback auf Browser-Stimme – [`docs/voice.md`](./docs/voice.md) |
+| **Spracherkennung (STT)** | 🟡 Backend fertig (Alpha 1.3) | faster-whisper lokal, noch nicht ans Frontend angebunden (Push-to-Talk fehlt) – [`docs/voice.md`](./docs/voice.md) |
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
 | **Gmail / Kalender** | ✅ Real, optional | Eigener Google-OAuth-Client nötig, siehe [`docs/integrations.md`](./docs/integrations.md) |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
@@ -176,5 +179,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.2 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.3 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

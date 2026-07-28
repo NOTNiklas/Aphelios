@@ -180,3 +180,24 @@ async def test_downloads_command_is_case_insensitive():
     await _handle_client_message(bus, {"type": "chat", "id": "a6", "text": "/Downloads"})
 
     assert len(received) == 1
+
+
+# -- Chat-Nachrichten-Routing (Alpha 1.3: Sprache) ----------------------------
+async def test_voice_speak_message_routes_correctly():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("voice.speak", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "voice.speak", "id": "v1", "text": "Hallo Sir."})
+
+    assert received[0].data == {"id": "v1", "text": "Hallo Sir."}
+
+
+async def test_voice_transcribe_message_routes_correctly():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("voice.transcribe", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "voice.transcribe", "id": "v2", "audio_base64": "AAAA"})
+
+    assert received[0].data == {"id": "v2", "audio_base64": "AAAA"}

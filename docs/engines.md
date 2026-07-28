@@ -209,3 +209,21 @@ Nachricht "beschäftigt" war, konnte diese Bestätigung nie ankommen
 (Deadlock, endete nach 120 s in einem automatischen Deny). Jetzt wird jede
 eingehende Nachricht als eigener Task eingeplant, siehe
 `backend/tests/test_ws_integration.py` für den Regressionstest.
+
+## Engines in Alpha 1.3
+
+### VoiceEngine (real, optional)
+Lokale Sprachein-/ausgabe – Details, Einrichtung und Bus-Schnittstelle in
+[`docs/voice.md`](./voice.md). Kurzfassung:
+
+- **TTS** (`voice.speak`): [Piper](https://github.com/rhasspy/piper) erzeugt
+  eine natürliche, tiefe Stimme lokal (kein API-Key). Ohne konfiguriertes
+  Modell (`APHELIOS_PIPER_MODEL_PATH`) bleibt sie inaktiv – das Frontend
+  fällt automatisch auf die Browser-Stimme zurück.
+- **STT** (`voice.transcribe`): [faster-whisper](
+  https://github.com/SYSTRAN/faster-whisper) transkribiert Audio lokal,
+  Modell wird beim ersten Gebrauch automatisch heruntergeladen.
+- Beide Modelle werden lazy geladen (erst bei der ersten Anfrage).
+- `voice.transcribe` ist bisher nicht an eine Frontend-Aufnahme-Oberfläche
+  angebunden (siehe `docs/voice.md`, „Noch nicht umgesetzt") – die
+  Wake-Word-Erkennung nutzt weiterhin die Web Speech API des Browsers.
