@@ -70,7 +70,13 @@ verknüpft. Ein SQLite-Index ermöglicht schnelles Wiederfinden. **Automatische
 Verlinkung:** Neue Notizen werden automatisch mit thematisch verwandten
 Notizen verknüpft (gleiche Kategorie oder gemeinsame Tags) – dadurch zeigt
 Obsidians eingebauter **Graph View** die Notizen als verbundenes Netz, ganz
-ohne manuelles Verlinken.
+ohne manuelles Verlinken. **Update statt Duplikat:** Titel + Kategorie
+bestimmen den Dateipfad – ein zweites `memory.note` mit demselben
+Titel/derselben Kategorie überschreibt dieselbe Datei und denselben
+SQLite-Eintrag, statt eine zweite Notiz anzulegen (`created` bleibt dabei
+erhalten, ein zusätzliches `updated` markiert die letzte Änderung). Darauf
+bauen andere Engines auf, die einen Vorgang wiederholt protokollieren, z. B.
+die `PlanningEngine` und die `AutomationEngine` (siehe unten).
 
 ### WeatherEngine (real)
 Ruft periodisch echtes Wetter über [Open-Meteo](https://open-meteo.com/) ab –
@@ -118,9 +124,20 @@ Daten statt Mock-Vorschau) – ein Klick auf einen Schritt togglet ihn als
 erledigt (`plan.step.complete`). Verwaltet bewusst nur **einen** aktiven Plan
 (Alpha 1.1: ein Nutzer, ein Fokus).
 
+**Obsidian-Notiz je Plan:** Jeder Plan wird zusätzlich als Notiz in der
+Kategorie „Projekte" gespeichert – Titel = Aufgabe, Inhalt = Checkliste +
+Fortschritt (`2/5 Schritte erledigt`, bei Vollständigkeit `Abgeschlossen ✅`).
+Die Notiz entsteht bei `plan.request` und wird bei jedem
+`plan.step.complete` überschrieben statt dupliziert (MemoryEngine erkennt
+denselben Titel/dieselbe Kategorie am Dateipfad und ersetzt den bestehenden
+Eintrag). Ersetzt das aktuelle Aufgaben-Panel ein Projekt durch den nächsten
+Plan, bleibt die Notiz im Vault trotzdem dauerhaft auffindbar – das ist der
+Ort, an dem „bisherige/erledigte Projekte" tatsächlich landen.
+
 Bus-Schnittstelle: `plan.request` (in) `{id, task}` · `plan.step.complete`
 (in) `{index}` · `plan.update` (out, state-artig/replayable) `{id, task,
-steps: [{index, text, done}], created_at}`.
+steps: [{index, text, done}], created_at}` · `memory.note` (out) –
+Projekt-Notiz bei Erstellung und jedem Toggle.
 
 ### ReasoningEngine (real)
 Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl. Auslösen im Chat mit
@@ -187,6 +204,15 @@ APHELIOS zielt auf Windows (siehe README) – auf anderen Plattformen (z. B.
 in dieser Entwicklungsumgebung) geben PowerShell-Ausführung und
 Programm-Start einen ehrlichen „nicht unterstützt"-Hinweis zurück statt zu
 crashen, dasselbe Muster wie GPU/Temperatur in der SystemEngine.
+
+**Obsidian-Protokoll:** Jede zustandsändernde Aktion, die tatsächlich
+ausgeführt wurde (bestätigt UND erfolgreich – nicht bei Ablehnung oder
+Fehlschlag), schreibt zusätzlich eine Notiz in der Kategorie „Protokolle":
+PowerShell-Befehl + Ausgabe, gestartetes/geschlossenes Programm, erstellter/
+verschobener/gelöschter Pfad. So bleibt nachvollziehbar, was APHELIOS am
+System verändert hat, ohne den Chat-Verlauf durchsuchen zu müssen. Rein
+lesende Aktionen (`list_dir`, `find_files`, `downloads`) erzeugen bewusst
+keine Notiz – das wäre reines Rauschen statt nützlicher Historie.
 
 **Bewusst NICHT in dieser ersten Ausbaustufe:**
 

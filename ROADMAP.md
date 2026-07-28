@@ -21,7 +21,9 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   statt stillem Rückfall, wenn ein Key vorhanden, die Anfrage aber scheitert)
 - ✅ **MemoryEngine** – Obsidian-Markdown (Tags, automatische Backlinks nach
   Kategorie/gemeinsamen Tags) + SQLite-Index → nativer Obsidian-Graph-View
-  zeigt die Notizen als verbundenes Netz
+  zeigt die Notizen als verbundenes Netz. Update-statt-Duplikat per
+  Titel+Kategorie, damit andere Engines denselben Vorgang wiederholt
+  protokollieren können, ohne den Vault zuzumüllen
 - ✅ **WeatherEngine** – echtes Wetter via Open-Meteo, kein API-Key nötig
 - ✅ **MailEngine** / **CalendarEngine** – echtes Gmail/Google-Kalender-Lesen,
   optional (eigener Google-OAuth-Client nötig, siehe `docs/integrations.md`)
@@ -42,7 +44,11 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   ausgelöst über `/denke <Frage>` im Chat
 - ✅ **PlanningEngine** – zerlegt Aufgaben in Schritte (`/plan <Aufgabe>`),
   echte Anzeige + Abhaken im „Aufgaben"-Panel; automatische **Ausführung**
-  der Schritte ist AutomationEngine (Alpha 1.2) – hier nur Zerlegung + Tracking
+  der Schritte ist AutomationEngine (Alpha 1.2) – hier nur Zerlegung + Tracking.
+  Jeder Plan wird zusätzlich als „Projekte"-Notiz im Obsidian-Vault geführt
+  (Checkliste + Fortschritt, live aktualisiert) – abgeschlossene Projekte
+  bleiben dort dauerhaft auffindbar, auch nachdem das Aufgaben-Panel den
+  nächsten Plan zeigt
 - ✅ Streaming-Antworten Ende-zu-Ende im HUD – bereits in Alpha 1.0 für die
   ConversationEngine gebaut, jetzt bestätigt auch für Reasoning/Planning über
   dieselbe `chat.token`/`chat.response`-Pipeline (keine Sonderlogik nötig)
@@ -69,6 +75,10 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 - ✅ Explorer/Downloads organisieren – `/downloads` listet den
   Downloads-Ordner (nur lesend, weitere Organisation über die
   Datei-Operationen oben)
+- ✅ Obsidian-Protokoll – jede erfolgreich ausgeführte, zustandsändernde
+  Aktion (PowerShell, Programm starten/schließen, Datei-Operationen)
+  schreibt eine Notiz in die Kategorie „Protokolle"; rein lesende Aktionen
+  bewusst nicht
 
 ## Alpha 1.3 — Voice (vollwertig)  *(dieser Stand)*
 
@@ -99,6 +109,13 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 ## Alpha 1.5 — Second Brain (fortgeschritten)
 
 - ✅ Automatische Verlinkung & Graph-Aufbau (MemoryEngine, siehe oben)
+- ✅ Automatisches Protokoll statt manuellem Merken – Automation (Alpha 1.2)
+  und Planning (Alpha 1.1) schreiben ihre Aktionen/Projekte selbstständig in
+  den Vault; die ConversationEngine liest ihn bereits als Kontext mit
+  (Alpha 1.1). Bewusst NICHT automatisch protokolliert: einzelne
+  Chat-Nachrichten – das würde die kuratierten Kategorien mit rohem
+  Gesprächsverlauf zumüllen, für den es bereits einen eigenen,
+  nicht-Obsidian-Speicher gibt (`memory.kv`, siehe ConversationEngine)
 - ⬜ Vektorsuche (ChromaDB / Qdrant) über den Vault
 - ⬜ Proaktives Wiederfinden („Das hattest du vor 8 Monaten gelernt")
 - ⬜ Knowledge-Engine (RAG über Dokumentation)

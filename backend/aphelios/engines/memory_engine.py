@@ -13,8 +13,18 @@ Datenpakete automatisch als verbundenes Netz darstellen – dafür ist keine
 zusätzliche Konfiguration in Obsidian nötig, nur der richtige Vault-Pfad
 (``APHELIOS_VAULT_PATH`` in der ``.env``, siehe ``.env.example``).
 
+**Update statt Duplikat:** Titel + Kategorie bestimmen den Dateipfad – ein
+zweites ``memory.note`` mit demselben Titel/derselben Kategorie überschreibt
+also dieselbe Datei (statt eine zweite anzulegen) und ersetzt auch den
+zugehörigen SQLite-Eintrag. ``created`` bleibt dabei stabil, ein zusätzliches
+``updated`` markiert die letzte Änderung. Darauf bauen Engines auf, die
+denselben Vorgang wiederholt protokollieren – z. B. die ``PlanningEngine``,
+die ihre „Projekte"-Notiz bei jedem abgehakten Schritt aktualisiert, statt
+für jeden Schritt eine neue Notiz zu erzeugen.
+
 Bus-Schnittstelle:
-    * ``memory.note`` (in)  – ``{title, content, category?, tags?, links?}`` speichern
+    * ``memory.note`` (in)  – ``{title, content, category?, tags?, links?}``
+      speichern/aktualisieren
     * ``memory.search`` (in) – ``{id, query}`` → antwortet mit ``memory.result``
     * ``memory.kv.set`` (in) – ``{key, value}`` – generischer, persistenter
       Key-Value-Speicher für andere Engines (JSON-serialisierbarer ``value``).
@@ -57,11 +67,30 @@ CATEGORIES = [
 ]
 
 _SLUG_RE = re.compile(r"[^\w\-]+", re.UNICODE)
+_CREATED_RE = re.compile(r"^created:\s*(.+)$", re.MULTILINE)
 
 
 def _slugify(title: str) -> str:
     slug = _SLUG_RE.sub("-", title.strip()).strip("-")
     return slug or "notiz"
+
+
+def _existing_created(path: Path) -> str | None:
+    """Liest ``created`` aus dem Frontmatter einer bereits vorhandenen Notiz.
+
+    Wird eine Notiz überschrieben (z. B. ein Plan, dessen Schritte sich
+    ändern), soll ``created`` stabil bleiben statt bei jedem Schreiben auf
+    "jetzt" zu springen – sonst würde der Vault fälschlich behaupten, jede
+    aktualisierte Notiz sei gerade eben neu entstanden.
+    """
+    if not path.exists():
+        return None
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = _CREATED_RE.search(text)
+    return match.group(1).strip() if match else None
 
 
 class MemoryEngine(BaseEngine):
@@ -132,6 +161,12 @@ class MemoryEngine(BaseEngine):
 
         path = self._write_note(title, content, category, tags, links)
 
+        # Upsert per Pfad: derselbe Titel+Kategorie ergibt denselben Pfad
+        # (siehe _write_note) – ohne das DELETE würde jede Aktualisierung
+        # einer bestehenden Notiz (z. B. ein fortschreitender Plan) einen
+        # zusätzlichen, veralteten Index-Eintrag anhäufen statt den
+        # bestehenden zu ersetzen.
+        self._db.execute("DELETE FROM notes WHERE path = ?", (str(path),))
         self._db.execute(
             "INSERT INTO notes (title, category, tags, path, content, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
@@ -249,11 +284,16 @@ class MemoryEngine(BaseEngine):
         all_tags = list(dict.fromkeys([*tags, category.lower()]))
 
         now = datetime.now(timezone.utc).isoformat()
+        created = _existing_created(path) or now
         frontmatter = [
             "---",
             f"title: {title}",
             f"category: {category}",
-            f"created: {now}",
+            f"created: {created}",
+        ]
+        if created != now:
+            frontmatter.append(f"updated: {now}")
+        frontmatter += [
             "tags:",
             *[f"  - {tag}" for tag in all_tags],
             "---",

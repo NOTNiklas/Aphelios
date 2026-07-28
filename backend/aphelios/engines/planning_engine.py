@@ -11,10 +11,19 @@ Mock-Vorschau) – Schritte lassen sich dort per Checkbox als erledigt markieren
 („Ausführung" im Sinne der Roadmap; automatische Ausführung durch eine
 Automation-Engine ist eine spätere Ausbaustufe, siehe ROADMAP.md Alpha 1.2).
 
+**Obsidian-Notiz je Plan:** Jeder Plan wird zusätzlich als Notiz (Kategorie
+„Projekte") im Vault gehalten – mit Checkliste und Fortschritt. Die Notiz
+entsteht bei ``plan.request`` und wird bei jedem ``plan.step.complete``
+überschrieben (nicht dupliziert, siehe ``MemoryEngine``), sodass der Vault
+jederzeit den aktuellen Stand zeigt und abgeschlossene Projekte dauerhaft
+auffindbar bleiben – auch nachdem sie im Aufgaben-Panel durch den nächsten
+Plan ersetzt wurden.
+
 Bus-Schnittstelle:
     * ``plan.request`` (in) – ``{id, task}``
     * ``plan.step.complete`` (in) – ``{index}`` – togglet den Schritt an ``index``
     * ``plan.update`` (out) – ``{id, task, steps: [{index, text, done}], created_at}``
+    * ``memory.note`` (out) – Projekt-Notiz, bei Erstellung und jedem Toggle
     * ``chat.token`` / ``chat.response`` (out) – kurze Bestätigung im Chat
 """
 
@@ -108,6 +117,7 @@ class PlanningEngine(BaseEngine):
             "created_at": time.time(),
         }
         await self.emit("plan.update", self._plan)
+        await self._sync_note()
 
         reply = f"Plan erstellt: {len(steps_text)} Schritt(e) – sieh sie dir im Aufgaben-Panel an."
         for word in reply.split(" "):
@@ -124,3 +134,31 @@ class PlanningEngine(BaseEngine):
                 step["done"] = not step["done"]
                 break
         await self.emit("plan.update", self._plan)
+        await self._sync_note()
+
+    async def _sync_note(self) -> None:
+        """Schreibt/aktualisiert die Obsidian-Notiz zum aktuellen Plan.
+
+        Titel + Kategorie sind über den ganzen Lebenszyklus eines Plans
+        gleich (der Task-Text ändert sich nicht), daher überschreibt jeder
+        Aufruf dieselbe Notiz (siehe MemoryEngine-Upsert-per-Pfad) statt eine
+        neue anzulegen – der Vault zeigt damit immer den aktuellen Stand
+        eines Projekts, von der Erstellung bis zum letzten abgehakten
+        Schritt, statt einer wachsenden Zahl von Snapshot-Notizen.
+        """
+        if not self._plan:
+            return
+        steps = self._plan["steps"]
+        done = sum(1 for step in steps if step["done"])
+        total = len(steps)
+        checklist = "\n".join(f"- [{'x' if step['done'] else ' '}] {step['text']}" for step in steps)
+        status = "Abgeschlossen ✅" if total and done == total else f"{done}/{total} Schritte erledigt"
+        await self.emit(
+            "memory.note",
+            {
+                "title": self._plan["task"],
+                "content": f"Status: {status}\n\n{checklist}",
+                "category": "Projekte",
+                "tags": ["plan", "projekt"],
+            },
+        )

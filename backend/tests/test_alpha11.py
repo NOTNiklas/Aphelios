@@ -7,6 +7,8 @@ zu müssen.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from aphelios.core.config import Config
 from aphelios.core.event_bus import Event, EventBus, request
 from aphelios.core.security import SecurityGate
@@ -53,6 +55,58 @@ async def test_memory_kv_set_overwrites_existing_value(tmp_path):
     result = await request(bus, "memory.kv.get", "memory.kv.result", {"key": "counter"})
 
     assert result["value"] == 2
+    await memory.stop()
+
+
+# -- MemoryEngine: Notiz-Update statt Duplikat --------------------------------
+async def test_memory_note_update_replaces_instead_of_duplicating(tmp_path):
+    # Regression: eine Engine, die dieselbe Notiz wiederholt schreibt (z. B.
+    # PlanningEngine bei jedem abgehakten Schritt), darf den SQLite-Index
+    # nicht mit einem Eintrag pro Schreibvorgang zumüllen.
+    bus, _, memory = _memory(tmp_path)
+    await memory.start()
+
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 1"}))
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 2"}))
+
+    rows = memory._db.execute("SELECT content FROM notes WHERE title = ?", ("Testprojekt",)).fetchall()
+    assert len(rows) == 1
+    assert rows[0][0] == "Stand 2"
+    await memory.stop()
+
+
+async def test_memory_note_update_keeps_file_content_current(tmp_path):
+    bus, _, memory = _memory(tmp_path)
+    await memory.start()
+
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 1"}))
+    result = await request(bus, "memory.search", "memory.result", {"query": "Testprojekt"})
+    path = Path(result["results"][0]["path"])
+
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 2"}))
+
+    text = path.read_text(encoding="utf-8")
+    assert "Stand 2" in text
+    assert "Stand 1" not in text
+    await memory.stop()
+
+
+async def test_memory_note_update_preserves_created_and_sets_updated(tmp_path):
+    bus, _, memory = _memory(tmp_path)
+    await memory.start()
+
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 1"}))
+    result = await request(bus, "memory.search", "memory.result", {"query": "Testprojekt"})
+    path = Path(result["results"][0]["path"])
+    first_text = path.read_text(encoding="utf-8")
+    created_line = next(line for line in first_text.splitlines() if line.startswith("created:"))
+    assert not any(line.startswith("updated:") for line in first_text.splitlines())
+
+    await memory.handle(Event("memory.note", {"title": "Testprojekt", "content": "Stand 2"}))
+    second_text = path.read_text(encoding="utf-8")
+
+    assert created_line in second_text.splitlines()
+    assert any(line.startswith("updated:") for line in second_text.splitlines())
     await memory.stop()
 
 
@@ -156,6 +210,46 @@ async def test_planning_engine_toggles_step_done():
 
     await engine._on_step_complete(Event("plan.step.complete", {"index": 0}))
     assert updates[-1]["steps"][0]["done"] is False
+
+
+# -- PlanningEngine: Pläne als Obsidian-"Projekte"-Notiz ----------------------
+async def test_planning_engine_writes_project_note_on_creation(tmp_path):
+    bus, config, memory = _memory(tmp_path)
+    await memory.start()
+    engine = PlanningEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+
+    await engine.handle(Event("plan.request", {"id": "p1", "task": "Küche putzen und Müll rausbringen"}))
+
+    result = await request(bus, "memory.search", "memory.result", {"query": "Küche putzen"})
+    assert len(result["results"]) == 1
+    hit = result["results"][0]
+    assert hit["category"] == "Projekte"
+    note_text = Path(hit["path"]).read_text(encoding="utf-8")
+    assert "- [ ] Küche putzen" in note_text
+    assert "0/2 Schritte erledigt" in note_text
+    await memory.stop()
+
+
+async def test_planning_engine_note_reflects_progress_without_duplicating(tmp_path):
+    bus, config, memory = _memory(tmp_path)
+    await memory.start()
+    engine = PlanningEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    await engine.handle(Event("plan.request", {"id": "p1", "task": "A und B"}))
+
+    await engine._on_step_complete(Event("plan.step.complete", {"index": 0}))
+
+    rows = memory._db.execute("SELECT path, content FROM notes WHERE category = 'Projekte'").fetchall()
+    assert len(rows) == 1  # Update statt zweiter Notiz
+    assert "1/2 Schritte erledigt" in rows[0][1]
+    assert "- [x] A" in rows[0][1]
+
+    await engine._on_step_complete(Event("plan.step.complete", {"index": 1}))
+    rows = memory._db.execute("SELECT content FROM notes WHERE category = 'Projekte'").fetchall()
+    assert len(rows) == 1
+    assert "Abgeschlossen" in rows[0][0]
+    await memory.stop()
 
 
 # -- ReasoningEngine ------------------------------------------------------------

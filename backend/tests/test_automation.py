@@ -66,6 +66,13 @@ def _auto_deny(bus: EventBus) -> None:
     bus.subscribe("confirmation.request", deny)
 
 
+def _capture_notes(bus: EventBus) -> list[dict]:
+    """Fängt jede ``memory.note`` ab, ohne dass eine echte MemoryEngine läuft."""
+    notes: list[dict] = []
+    bus.subscribe("memory.note", lambda e: notes.append(e.data))
+    return notes
+
+
 async def _run(engine: AutomationEngine, action: str, **data) -> str:
     responses: list[dict] = []
     engine.bus.subscribe("chat.response", lambda e: responses.append(e.data))
@@ -141,6 +148,32 @@ async def test_create_file_denied_does_not_write(tmp_path):
     assert "abgelehnt" in text.lower()
 
 
+# -- Obsidian-Protokoll: erfolgreiche Aktionen erzeugen memory.note -----------
+async def test_create_file_logs_memory_note(tmp_path):
+    bus = EventBus()
+    _auto_approve(bus)
+    engine = _engine(bus)
+    notes = _capture_notes(bus)
+    target = tmp_path / "note.txt"
+
+    await _run(engine, "create_file", path=str(target), content="hallo welt")
+
+    assert len(notes) == 1
+    assert notes[0]["category"] == "Protokolle"
+    assert str(target) in notes[0]["content"]
+
+
+async def test_create_file_denied_does_not_log_memory_note(tmp_path):
+    bus = EventBus()
+    _auto_deny(bus)
+    engine = _engine(bus)
+    notes = _capture_notes(bus)
+
+    await _run(engine, "create_file", path=str(tmp_path / "note.txt"), content="hallo welt")
+
+    assert notes == []
+
+
 async def test_delete_path_denied_leaves_file_intact(tmp_path):
     # Kern des SecurityGate: eine Ablehnung MUSS die Aktion tatsächlich
     # verhindern, sonst ist das ganze Bestätigungssystem wirkungslos.
@@ -163,11 +196,27 @@ async def test_delete_path_approved_removes_file(tmp_path):
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
 
     text = await _run(engine, "delete_path", path=str(target))
 
     assert not target.exists()
     assert "Gelöscht" in text
+    assert len(notes) == 1
+    assert notes[0]["category"] == "Protokolle"
+
+
+async def test_delete_path_denied_does_not_log_memory_note(tmp_path):
+    target = tmp_path / "wichtig.txt"
+    target.write_text("nicht löschen")
+    bus = EventBus()
+    _auto_deny(bus)
+    engine = _engine(bus)
+    notes = _capture_notes(bus)
+
+    await _run(engine, "delete_path", path=str(target))
+
+    assert notes == []
 
 
 async def test_delete_path_removes_folder_recursively(tmp_path):
@@ -197,11 +246,13 @@ async def test_move_file_moves_to_new_location(tmp_path):
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
 
     await _run(engine, "move_file", src=str(src), dst=str(dst))
 
     assert not src.exists()
     assert dst.read_text() == "inhalt"
+    assert len(notes) == 1
 
 
 async def test_create_folder_creates_nested_directories(tmp_path):
@@ -209,10 +260,12 @@ async def test_create_folder_creates_nested_directories(tmp_path):
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
 
     await _run(engine, "create_folder", path=str(target))
 
     assert target.is_dir()
+    assert len(notes) == 1
 
 
 # -- Downloads-Übersicht (nur lesend) -----------------------------------------
@@ -224,9 +277,22 @@ async def test_downloads_lists_home_downloads_folder(tmp_path, monkeypatch):
 
     bus = EventBus()
     engine = _engine(bus)
+    notes = _capture_notes(bus)
     text = await _run(engine, "downloads")
 
     assert "bild.png" in text
+    assert notes == []  # rein lesend -> kein Protokoll-Eintrag
+
+
+async def test_list_dir_does_not_log_memory_note(tmp_path):
+    (tmp_path / "a.txt").write_text("x")
+    bus = EventBus()
+    engine = _engine(bus)
+    notes = _capture_notes(bus)
+
+    await _run(engine, "list_dir", path=str(tmp_path))
+
+    assert notes == []
 
 
 # -- close_app (echtes psutil, kein Mock nötig – funktioniert plattformübergreifend)
@@ -234,10 +300,12 @@ async def test_close_app_reports_zero_for_unknown_process():
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
 
     text = await _run(engine, "close_app", name="ein-prozess-der-sicher-nicht-laeuft-xyz")
 
     assert "Kein laufender Prozess" in text
+    assert notes == []  # nichts wurde tatsächlich beendet -> kein Protokoll-Eintrag
 
 
 async def test_close_app_denied_reports_rejection():
@@ -276,9 +344,12 @@ async def test_run_powershell_executes_and_returns_output_on_windows(monkeypatch
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
     text = await _run(engine, "run_powershell", command="Get-Process")
 
     assert "Hallo aus PowerShell" in text
+    assert len(notes) == 1
+    assert "Get-Process" in notes[0]["content"]
 
 
 async def test_run_powershell_denied_never_spawns_process(monkeypatch):
@@ -318,10 +389,12 @@ async def test_open_app_calls_startfile_on_windows(monkeypatch):
     bus = EventBus()
     _auto_approve(bus)
     engine = _engine(bus)
+    notes = _capture_notes(bus)
     text = await _run(engine, "open_app", name="notepad")
 
     assert calls == ["notepad"]
     assert "gestartet" in text.lower()
+    assert len(notes) == 1
 
 
 # -- find_app_path: Namensauflösung über Startmenü/Desktop --------------------

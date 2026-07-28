@@ -53,7 +53,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Reasoning** | ✅ Real (Alpha 1.1) | Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl – `/denke <Frage>` im Chat |
 | **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
 | **Automation** | ✅ Real (Alpha 1.2, Windows) | PowerShell, Datei-Operationen, Programme starten/schließen – immer mit Bestätigung |
-| **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index |
+| **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index; Automation & Planning protokollieren ihre Aktionen/Projekte automatisch |
 | **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Dauer-Zuhören (Web Speech API, Browser) |
 | **Sprachausgabe (TTS)** | ✅ Real, optional (Alpha 1.3) | Piper – natürliche, tiefe Stimme lokal, kein API-Key; Fallback auf Browser-Stimme – [`docs/voice.md`](./docs/voice.md) |
 | **Spracherkennung (STT)** | 🟡 Backend fertig (Alpha 1.3) | faster-whisper lokal, noch nicht ans Frontend angebunden (Push-to-Talk fehlt) – [`docs/voice.md`](./docs/voice.md) |

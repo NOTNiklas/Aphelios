@@ -38,8 +38,16 @@ Systemaktionen führt):
   Entwicklungsumgebung (Linux, ohne Display) grundsätzlich nicht verfügbar
   ist. Blind implementieren, ohne es je laufen zu sehen, wäre unseriös.
 
+**Obsidian-Protokoll:** Jede zustandsändernde Aktion, die tatsächlich
+ausgeführt wurde (bestätigt UND erfolgreich – nicht bei Ablehnung oder
+Fehlschlag), schreibt zusätzlich eine Notiz in den Vault (Kategorie
+„Protokolle") – so bleibt nachvollziehbar, was APHELIOS am System verändert
+hat, ohne den Chat-Verlauf durchsuchen zu müssen. Rein lesende Aktionen
+(``list_dir``, ``find_files``, ``downloads``) erzeugen bewusst keine Notiz.
+
 Bus-Schnittstelle:
     * ``automation.request`` (in) – ``{id, action, ...}``
+    * ``memory.note`` (out) – Protokoll-Notiz je ausgeführter Aktion
     * ``chat.token`` / ``chat.response`` (out) – Rückmeldung im Chat
 """
 
@@ -198,6 +206,24 @@ class AutomationEngine(BaseEngine):
             await asyncio.sleep(0.02)
         await self.emit("chat.response", {"id": request_id, "text": text, "final": True})
 
+    async def _log_action(self, title: str, content: str, tags: list[str]) -> None:
+        """Protokolliert eine erfolgreich ausgeführte Aktion im Obsidian-Vault.
+
+        Nur für zustandsändernde Aktionen (nach Bestätigung UND erfolgreicher
+        Ausführung) – reines Lesen (``list_dir``, ``find_files``,
+        ``downloads``) wird bewusst nicht protokolliert, das wäre reines
+        Rauschen im Vault statt nützlicher Historie.
+        """
+        await self.emit(
+            "memory.note",
+            {
+                "title": title,
+                "content": content,
+                "category": "Protokolle",
+                "tags": ["automation", *tags],
+            },
+        )
+
     # -- PowerShell ---------------------------------------------------------
     async def _run_powershell(self, data: dict) -> str:
         command = (data.get("command") or "").strip()
@@ -230,7 +256,13 @@ class AutomationEngine(BaseEngine):
         )
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=30.0)
         output = (stdout or stderr).decode("utf-8", errors="replace").strip()
-        return output[:1500] or "Befehl ausgeführt (keine Ausgabe)."
+        result = output[:1500] or "Befehl ausgeführt (keine Ausgabe)."
+        await self._log_action(
+            f"PowerShell: {command[:60]}",
+            f"Befehl:\n```powershell\n{command}\n```\n\nAusgabe:\n```\n{result}\n```",
+            ["powershell"],
+        )
+        return result
 
     # -- Programme ------------------------------------------------------------
     async def _open_app(self, data: dict) -> str:
@@ -261,6 +293,7 @@ class AutomationEngine(BaseEngine):
             suggestions = find_similar_app_names(name)
             hint = f" Meintest du: {', '.join(suggestions)}?" if suggestions else ""
             return f"Konnte {name!r} nicht starten: {exc}.{hint}"
+        await self._log_action(f"Programm gestartet: {name}", f"Ziel: {target}", ["programm", "start"])
         return f"{name} gestartet (über {resolved.name})." if resolved else f"{name} gestartet."
 
     async def _close_app(self, data: dict) -> str:
@@ -286,6 +319,9 @@ class AutomationEngine(BaseEngine):
                 except psutil.Error:
                     pass
         if closed:
+            await self._log_action(
+                f"Programm geschlossen: {name}", f"{closed} Prozess(e) beendet.", ["programm", "close"]
+            )
             return f"{closed} Prozess(e) mit Namen ~{name!r} beendet."
         return f"Kein laufender Prozess namens {name!r} gefunden."
 
@@ -322,6 +358,7 @@ class AutomationEngine(BaseEngine):
         if not allowed:
             return "Abgelehnt."
         path.mkdir(parents=True, exist_ok=True)
+        await self._log_action(f"Ordner erstellt: {path.name}", f"Pfad: {path}", ["datei-operation", "ordner"])
         return f"Ordner erstellt: {path}"
 
     async def _create_file(self, data: dict) -> str:
@@ -340,6 +377,10 @@ class AutomationEngine(BaseEngine):
             return "Abgelehnt."
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
+        note_body = f"Pfad: {path}"
+        if content:
+            note_body += f"\n\nInhalt:\n```\n{content[:500]}\n```"
+        await self._log_action(f"Datei erstellt: {path.name}", note_body, ["datei-operation", "datei"])
         return f"Datei erstellt: {path}"
 
     async def _move_file(self, data: dict) -> str:
@@ -359,6 +400,9 @@ class AutomationEngine(BaseEngine):
             return "Abgelehnt."
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(src), str(dst))
+        await self._log_action(
+            f"Datei verschoben: {src.name} → {dst.name}", f"{src} → {dst}", ["datei-operation", "verschieben"]
+        )
         return f"Verschoben: {src} → {dst}"
 
     async def _delete_path(self, data: dict) -> str:
@@ -380,6 +424,7 @@ class AutomationEngine(BaseEngine):
             shutil.rmtree(path)
         else:
             path.unlink()
+        await self._log_action(f"Gelöscht: {path.name}", f"Pfad: {path}", ["datei-operation", "löschen"])
         return f"Gelöscht: {path}"
 
     async def _downloads(self, data: dict) -> str:
