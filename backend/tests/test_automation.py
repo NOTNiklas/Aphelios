@@ -19,7 +19,32 @@ from aphelios.core.config import Config
 from aphelios.core.event_bus import Event, EventBus
 from aphelios.core.security import RiskLevel, SecurityGate
 from aphelios.engines import automation_engine as automation_module
-from aphelios.engines.automation_engine import AutomationEngine, classify_powershell
+from aphelios.engines.automation_engine import (
+    AutomationEngine,
+    classify_powershell,
+    find_app_path,
+    find_similar_app_names,
+)
+
+
+def _fake_start_menu(tmp_path, monkeypatch, app_names: list[str]) -> Path:
+    """Baut ein Fake-Startmenü unter tmp_path und lenkt APPDATA dorthin;
+    die anderen Suchverzeichnis-Variablen werden geleert, damit Tests
+    deterministisch bleiben (kein echtes Startmenü dieser Maschine mischt sich ein).
+
+    Muss dieselbe Unterpfad-Struktur wie ``_shortcut_search_dirs()`` nutzen
+    (``Microsoft/Windows/Start Menu/Programs`` unter ``APPDATA``), sonst
+    findet die Suche das Fake-Verzeichnis nicht.
+    """
+    appdata = tmp_path / "AppData"
+    programs = appdata / "Microsoft" / "Windows" / "Start Menu" / "Programs"
+    programs.mkdir(parents=True)
+    for name in app_names:
+        (programs / f"{name}.lnk").write_text("")
+    monkeypatch.setenv("APPDATA", str(appdata))
+    for var in ("PROGRAMDATA", "USERPROFILE", "PUBLIC"):
+        monkeypatch.delenv(var, raising=False)
+    return programs
 
 
 def _engine(bus: EventBus, timeout: float = 2.0) -> AutomationEngine:
@@ -282,6 +307,11 @@ async def test_open_app_reports_unsupported_on_non_windows():
 
 async def test_open_app_calls_startfile_on_windows(monkeypatch):
     monkeypatch.setattr(automation_module, "IS_WINDOWS", True)
+    # Keine Startmenü-Verzeichnisse gesetzt -> find_app_path() findet nichts,
+    # Fallback auf den rohen Namen (Regression: "notepad" muss weiter direkt
+    # per PATH/App-Paths funktionieren, wie vor der Namensauflösung).
+    for var in ("APPDATA", "PROGRAMDATA", "USERPROFILE", "PUBLIC"):
+        monkeypatch.delenv(var, raising=False)
     calls: list[str] = []
     monkeypatch.setattr(os, "startfile", lambda name: calls.append(name), raising=False)
 
@@ -292,3 +322,87 @@ async def test_open_app_calls_startfile_on_windows(monkeypatch):
 
     assert calls == ["notepad"]
     assert "gestartet" in text.lower()
+
+
+# -- find_app_path: Namensauflösung über Startmenü/Desktop --------------------
+def test_find_app_path_exact_match(tmp_path, monkeypatch):
+    programs = _fake_start_menu(tmp_path, monkeypatch, ["Obsidian", "Spotify"])
+    result = find_app_path("Obsidian")
+    assert result == programs / "Obsidian.lnk"
+
+
+def test_find_app_path_case_insensitive(tmp_path, monkeypatch):
+    _fake_start_menu(tmp_path, monkeypatch, ["Obsidian"])
+    result = find_app_path("obsidian")
+    assert result is not None
+    assert result.stem == "Obsidian"
+
+
+def test_find_app_path_prefers_most_specific_substring_match(tmp_path, monkeypatch):
+    # "code" soll das kürzere/spezifischere "Code.lnk" finden, nicht das
+    # längere "Visual Studio Code.lnk", falls beide zufällig passen.
+    _fake_start_menu(tmp_path, monkeypatch, ["Code", "Visual Studio Code"])
+    result = find_app_path("code")
+    assert result.stem == "Code"
+
+
+def test_find_app_path_returns_none_without_match(tmp_path, monkeypatch):
+    _fake_start_menu(tmp_path, monkeypatch, ["Spotify"])
+    assert find_app_path("ein-programm-das-es-nicht-gibt") is None
+
+
+def test_find_app_path_returns_none_without_any_search_dirs(monkeypatch):
+    for var in ("APPDATA", "PROGRAMDATA", "USERPROFILE", "PUBLIC"):
+        monkeypatch.delenv(var, raising=False)
+    assert find_app_path("irgendwas") is None
+
+
+def test_find_similar_app_names_suggests_close_matches(tmp_path, monkeypatch):
+    _fake_start_menu(tmp_path, monkeypatch, ["Obsidian", "Spotify", "Discord"])
+    suggestions = find_similar_app_names("Obsidean")
+    assert "Obsidian" in suggestions
+
+
+# -- open_app: nutzt find_app_path, zeigt aufgelösten Pfad in der Bestätigung -
+async def test_open_app_resolves_display_name_via_start_menu(tmp_path, monkeypatch):
+    monkeypatch.setattr(automation_module, "IS_WINDOWS", True)
+    programs = _fake_start_menu(tmp_path, monkeypatch, ["Obsidian"])
+    calls: list[str] = []
+    monkeypatch.setattr(os, "startfile", lambda path: calls.append(path), raising=False)
+
+    bus = EventBus()
+    confirmations: list[dict] = []
+
+    async def approve_and_capture(event: Event) -> None:
+        confirmations.append(event.data)
+        await bus.publish(Event("confirmation.approve", {"id": event.data["id"]}))
+
+    bus.subscribe("confirmation.request", approve_and_capture)
+    engine = _engine(bus)
+
+    text = await _run(engine, "open_app", name="Obsidian")
+
+    expected = str(programs / "Obsidian.lnk")
+    assert calls == [expected]
+    # Der Bestätigungsdialog muss den ECHTEN Pfad zeigen, nicht nur "Obsidian" –
+    # Transparenz-Prinzip aus docs/security.md.
+    assert confirmations[0]["target"] == expected
+    assert "gestartet" in text.lower()
+
+
+async def test_open_app_unresolved_name_suggests_alternatives(tmp_path, monkeypatch):
+    monkeypatch.setattr(automation_module, "IS_WINDOWS", True)
+    _fake_start_menu(tmp_path, monkeypatch, ["Obsidian"])
+
+    def _raise(path):
+        raise OSError("Datei nicht gefunden")
+
+    monkeypatch.setattr(os, "startfile", _raise, raising=False)
+
+    bus = EventBus()
+    _auto_approve(bus)
+    engine = _engine(bus)
+    text = await _run(engine, "open_app", name="Obsidean")  # Tippfehler
+
+    assert "Meintest du" in text
+    assert "Obsidian" in text

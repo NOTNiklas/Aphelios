@@ -1,6 +1,16 @@
 """AutomationEngine – PowerShell-Ausführung, Datei-Operationen, Programme
 starten/schließen (Alpha 1.2, erste Ausbaustufe).
 
+**Programme per Name finden:** ``open_app`` erwartet nicht zwingend einen
+exakten, PATH-auflösbaren Namen (``os.startfile`` allein findet z. B.
+"notepad", aber nicht "Obsidian" – die meisten installierten Apps liegen
+nicht im PATH). Stattdessen wird zuerst das Windows-Startmenü/der Desktop
+nach einer passenden Verknüpfung (``.lnk``/``.exe``) durchsucht – demselben
+Mechanismus, den das native Windows-Startmenü beim Tippen nutzt. Gefunden,
+wird der aufgelöste Pfad gestartet (und im Bestätigungsdialog transparent
+angezeigt); sonst greift der bisherige Fallback auf den rohen Namen (PATH/
+App-Paths via ``os.startfile``).
+
 **Grundsatz:** Alles außer reinem Lesen (`list_dir`, `find_files`,
 `downloads`) läuft zwingend über das ``SecurityGate`` – siehe
 ``docs/security.md``. Es gibt keinen Pfad, der eine schreibende/löschende
@@ -36,6 +46,7 @@ Bus-Schnittstelle:
 from __future__ import annotations
 
 import asyncio
+import difflib
 import os
 import re
 import shutil
@@ -74,6 +85,76 @@ def classify_powershell(command: str) -> RiskLevel:
     if _DANGEROUS_PATTERN.search(command):
         return RiskLevel.DANGEROUS
     return RiskLevel.CONFIRM
+
+
+#: Dateiendungen, die als "startbares Programm" zählen, wenn nach einem
+#: Anzeigenamen gesucht wird (Verknüpfung oder direkte ausführbare Datei).
+_APP_EXTENSIONS = (".lnk", ".exe")
+
+
+def _shortcut_search_dirs() -> list[Path]:
+    """Verzeichnisse, in denen Windows Programm-Verknüpfungen ablegt.
+
+    Dieselben Orte, die auch das native Windows-Startmenü durchsucht:
+    Start-Menü (pro Nutzer + für alle Nutzer) und Desktop (pro Nutzer +
+    öffentlich). Über Umgebungsvariablen aufgelöst statt hartcodierter
+    Pfade – funktioniert dadurch unter jedem Nutzerkonto und lässt sich in
+    Tests per ``monkeypatch.setenv`` gezielt auf ein Testverzeichnis lenken.
+    """
+    env_subpaths = [
+        ("APPDATA", "Microsoft/Windows/Start Menu/Programs"),
+        ("PROGRAMDATA", "Microsoft/Windows/Start Menu/Programs"),
+        ("USERPROFILE", "Desktop"),
+        ("PUBLIC", "Desktop"),
+    ]
+    dirs: list[Path] = []
+    for var, sub in env_subpaths:
+        base = os.environ.get(var)
+        if base:
+            candidate = Path(base) / sub
+            if candidate.is_dir():
+                dirs.append(candidate)
+    return dirs
+
+
+def _iter_known_apps() -> list[Path]:
+    """Alle gefundenen Programm-Verknüpfungen/.exe-Dateien (rekursiv)."""
+    found: list[Path] = []
+    for directory in _shortcut_search_dirs():
+        for path in directory.rglob("*"):
+            if path.suffix.lower() in _APP_EXTENSIONS:
+                found.append(path)
+    return found
+
+
+def find_app_path(name: str) -> Path | None:
+    """Löst einen Anzeigenamen (z. B. "Obsidian") zu einer startbaren Datei auf.
+
+    Exakter Treffer (Groß-/Kleinschreibung egal) gewinnt sofort; sonst der
+    Teilstring-Treffer mit dem kürzesten (also spezifischsten) Namen. Gibt
+    ``None`` zurück, wenn nichts passt – Aufrufer fallen dann auf den rohen
+    Namen zurück (funktioniert weiter für PATH-/App-Paths-auflösbare Namen
+    wie "notepad").
+    """
+    lowered = name.strip().lower()
+    if not lowered:
+        return None
+    best: tuple[int, Path] | None = None
+    for path in _iter_known_apps():
+        stem = path.stem.lower()
+        if stem == lowered:
+            return path
+        if lowered in stem:
+            score = len(stem) - len(lowered)
+            if best is None or score < best[0]:
+                best = (score, path)
+    return best[1] if best else None
+
+
+def find_similar_app_names(name: str, limit: int = 5) -> list[str]:
+    """"Meintest du …?"-Vorschläge, wenn ``find_app_path`` nichts fand."""
+    names = sorted({path.stem for path in _iter_known_apps()})
+    return difflib.get_close_matches(name, names, n=limit, cutoff=0.4)
 
 
 def _human_size(path: Path) -> str:
@@ -158,19 +239,29 @@ class AutomationEngine(BaseEngine):
             return "Kein Programmname angegeben."
         if not IS_WINDOWS:
             return f"Programme starten ist nur unter Windows verfügbar. Gestartet wäre: {name}"
+
+        # Erst auflösen (Startmenü/Desktop durchsuchen), DANN bestätigen lassen –
+        # damit der Bestätigungsdialog den echten Pfad zeigt, nicht nur den
+        # eingetippten Namen. Kein Treffer → Fallback auf den rohen Namen
+        # (funktioniert weiter für PATH-/App-Paths-Namen wie "notepad").
+        resolved = find_app_path(name)
+        target = str(resolved) if resolved else name
+
         allowed = await self.security.request(
             action="Programm starten",
-            target=name,
+            target=target,
             level=RiskLevel.CONFIRM,
             reason="Startet ein Programm auf dem System.",
         )
         if not allowed:
             return "Abgelehnt."
         try:
-            os.startfile(name)  # noqa: S606 – bewusst, erst nach Nutzerbestätigung
+            os.startfile(target)  # noqa: S606 – bewusst, erst nach Nutzerbestätigung
         except OSError as exc:
-            return f"Konnte {name!r} nicht starten: {exc}"
-        return f"{name} gestartet."
+            suggestions = find_similar_app_names(name)
+            hint = f" Meintest du: {', '.join(suggestions)}?" if suggestions else ""
+            return f"Konnte {name!r} nicht starten: {exc}.{hint}"
+        return f"{name} gestartet (über {resolved.name})." if resolved else f"{name} gestartet."
 
     async def _close_app(self, data: dict) -> str:
         import psutil

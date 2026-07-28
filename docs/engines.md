@@ -169,6 +169,20 @@ Zusätzlich (bisher nur über den Bus, kein eigener Slash-Befehl):
 `list_dir`, `find_files` (beide nur lesend), `create_folder`, `create_file`,
 `move_file`.
 
+**Programme per Anzeigename finden (`/oeffne`):** `os.startfile(name)`
+allein findet nur Namen, die über PATH oder die "App Paths"-Registry
+auflösbar sind (z. B. `notepad`) – die meisten installierten Apps wie
+Obsidian liegen dort nicht. `find_app_path()` durchsucht deshalb zuerst das
+Windows-Startmenü (eigenes Konto + alle Nutzer) und den Desktop (eigenes
+Konto + öffentlich) nach einer passenden `.lnk`/`.exe`-Datei – derselbe Ort,
+den auch das native Windows-Startmenü beim Tippen durchsucht. Exakter
+Treffer gewinnt, sonst der spezifischste Teilstring-Treffer. Wird etwas
+gefunden, zeigt der Bestätigungsdialog den **aufgelösten Pfad**, nicht nur
+den eingetippten Namen (Transparenz-Prinzip aus `docs/security.md`). Kein
+Treffer → Fallback auf den rohen Namen (funktioniert weiter für PATH-Namen).
+Schlägt der Start trotzdem fehl, schlägt `find_similar_app_names()`
+ähnliche gefundene Namen vor ("Meintest du: Obsidian?").
+
 APHELIOS zielt auf Windows (siehe README) – auf anderen Plattformen (z. B.
 in dieser Entwicklungsumgebung) geben PowerShell-Ausführung und
 Programm-Start einen ehrlichen „nicht unterstützt"-Hinweis zurück statt zu
