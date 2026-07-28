@@ -12,18 +12,38 @@ APHELIOS hat zwei getrennte Sprach-Bausteine, die zusammenspielen:
 
 | Baustein | Läuft wo? | Technik | Braucht Einrichtung? |
 |---|---|---|---|
-| Wake-Word „Aphelios" + Dauer-Zuhören | Browser | Web Speech API | Nein – Mikrofon-Button klicken, fertig |
+| Wake-Word „Aphelios" + Dauer-Zuhören | Browser | Web Speech API (nur Chromium) | Nein – Mikrofon-Button klicken, fertig |
+| Push-to-Talk (Alternative ohne Wake-Word) | Browser + Backend | `MediaRecorder` + faster-whisper | Nein in Chromium (Fallback), Pflicht in Firefox/Waterfox |
 | Sprachausgabe (TTS) | Backend, Fallback im Browser | Piper (lokal) → Browser-Stimme | Optional (siehe unten) |
 | Spracherkennung (STT) | Backend | faster-whisper (lokal) | Optional, kein manueller Download nötig |
 
 **Grundsatz:** Ohne jede Einrichtung funktioniert alles wie in Alpha 1.0/1.1 –
-Wake-Word läuft im Browser, Antworten werden mit der (robotischen)
-Browser-Stimme vorgelesen. Die Ausbaustufen unten verbessern nur die
-**Qualität**, nichts wird dadurch kaputter oder Pflicht.
+Wake-Word (Chromium) bzw. Push-to-Talk (alle anderen) läuft im Browser,
+Antworten werden mit der (robotischen) Browser-Stimme vorgelesen. Die
+Ausbaustufen unten verbessern nur die **Qualität**, nichts wird dadurch
+kaputter oder Pflicht.
 
 ---
 
-## Wake-Word & Dauer-Zuhören (funktioniert ohne Einrichtung)
+## Browser-Kompatibilität: Chromium vs. Firefox/Waterfox
+
+Die **Web Speech API** (`SpeechRecognition`, für das Wake-Word und
+Dauer-Zuhören) ist nur in Chromium-basierten Browsern implementiert (Chrome,
+Edge, Brave, Opera, …). **Firefox-basierte Browser (Firefox, Waterfox,
+LibreWolf, …) implementieren dieses Web-Standard-API grundsätzlich nicht** –
+das ist eine Einschränkung von Gecko/Firefox selbst, nicht etwas, das sich
+von APHELIOS aus beheben lässt.
+
+Damit Sprachein-/ausgabe trotzdem in jedem Browser mit Mikrofon funktioniert,
+erkennt APHELIOS das automatisch und wechselt auf **Push-to-Talk** (siehe
+unten) – kein Wake-Word dort, aber Sprachbefehle und Sprachausgabe
+funktionieren genauso. Die Sprachausgabe (TTS, sowohl Piper als auch die
+Browser-Stimme) ist davon ohnehin nicht betroffen und funktioniert in jedem
+Browser identisch.
+
+---
+
+## Wake-Word & Dauer-Zuhören (Chrome/Edge, funktioniert ohne Einrichtung)
 
 Die Wake-Word-Erkennung läuft im Browser über die **Web Speech API**
 (`frontend/src/voice/useWakeWord.ts`):
@@ -41,6 +61,34 @@ Die Wake-Word-Erkennung läuft im Browser über die **Web Speech API**
 > Läuft nur in Chromium-basierten Browsern (Chrome/Edge) und nur in einem
 > sicheren Kontext (`localhost` oder HTTPS) – NICHT über eine LAN-IP wie
 > `192.168.x.x`.
+
+---
+
+## Push-to-Talk (Firefox/Waterfox – oder als Alternative überall)
+
+Erkennt das HUD kein `SpeechRecognition` (z. B. in Firefox/Waterfox), wird
+der Mikrofon-Button automatisch zu einem Push-to-Talk-Knopf statt eines
+deaktivierten „SPRACHE N/V"-Hinweises:
+
+1. Mikrofon-Button klicken, Freigabe erlauben → Aufnahme startet
+   (`MediaRecorder`, Kopfzeile zeigt „● NIMMT AUF").
+2. Sprechen, dann den Button erneut klicken → Aufnahme stoppt, wird als
+   Base64-Audio an die Backend-VoiceEngine geschickt (`voice.transcribe`,
+   faster-whisper).
+3. Der erkannte Text geht direkt als Befehl an dieselbe Pipeline wie ein
+   Wake-Word-Kommando – **kein** Wake-Word nötig, der Tastendruck selbst ist
+   die Aktivierung.
+4. Die nächste APHELIOS-Antwort wird einmalig vorgelesen (TTS wie gewohnt).
+
+Braucht zwingend eine konfigurierte faster-whisper-Installation
+(`pip install -e ".[voice]"`, siehe unten) – ohne sie erscheint eine rote
+Fehlermeldung (`STT: ...`) mit dem genauen Grund, kein stiller Fehlschlag.
+
+Kein Dauer-Zuhören und kein Wake-Word bei Push-to-Talk: jede Aufnahme ist ein
+einzelner, bewusst gestarteter Befehl – technisch bräuchte kontinuierliches
+Zuhören ohne Wake-Word entweder ein eigenes, lokales Wake-Word-Modell (z. B.
+openWakeWord/Porcupine) oder Voice-Activity-Detection, beides bewusst noch
+nicht umgesetzt (siehe „Noch nicht umgesetzt" unten).
 
 ---
 
@@ -125,14 +173,11 @@ APHELIOS_WHISPER_MODEL=base       # tiny/base/small/medium/large-v3
 APHELIOS_WHISPER_DEVICE=cpu       # oder "cuda" mit passender NVIDIA-GPU
 ```
 
-**Alpha 1.3 (erste Ausbaustufe):** Die Backend-Transkription
-(`voice.transcribe` über den Bus) ist fertig und getestet, aber noch **nicht**
-an eine Aufnahme-Oberfläche im Frontend angebunden (z. B. ein
-„Gedrückt-halten-zum-Sprechen"-Button) – die kontinuierliche
-Wake-Word-Erkennung läuft weiterhin über die bewährte Web Speech API des
-Browsers, um das bereits funktionierende Setup nicht zu riskieren. Die
-Backend-Transkription steht damit als Baustein für eine spätere
-Push-to-Talk-Oberfläche bereit.
+**Frontend-Anbindung:** Die Backend-Transkription (`voice.transcribe` über
+den Bus) ist an die Push-to-Talk-Oberfläche angebunden (siehe oben) – aktiv
+in jedem Browser ohne `SpeechRecognition` (Firefox/Waterfox), in Chromium
+weiterhin nur die Chrome/Edge-eigene Spracherkennung, um das dort bereits
+funktionierende Wake-Word-Setup nicht zu verändern.
 
 ---
 
@@ -154,6 +199,8 @@ Modell-Laden verzögert wird.
 ## Noch nicht umgesetzt (Ausblick)
 
 - **Barge-in**: Unterbrechen der laufenden Sprachausgabe durch neue Sprache.
+- **Lokales Wake-Word-Modell für Firefox/Waterfox** (z. B. openWakeWord/
+  Porcupine) – würde dort echtes Dauer-Zuhören ohne Tastendruck ermöglichen,
+  ist aber ein eigenständiger, deutlich größerer Baustein als Push-to-Talk.
 - **Voice-Activity-Detection** für den Dauer-Zuhör-Modus (aktuell übernimmt
-  das die Web Speech API selbst).
-- **Push-to-Talk-Oberfläche** im Frontend für `voice.transcribe` (siehe oben).
+  das in Chromium die Web Speech API selbst).

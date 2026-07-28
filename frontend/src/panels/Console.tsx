@@ -10,7 +10,8 @@ export function Console() {
   const listening = useHud((s) => s.listening);
   const speaking = useHud((s) => s.speaking);
   const { sendChat } = useBackend();
-  const { supported, enabled, error, toggle } = useWakeWord((text) => sendChat(text));
+  const { supported, enabled, error, toggle, pushToTalkSupported, recording, togglePushToTalk } =
+    useWakeWord((text) => sendChat(text));
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +40,10 @@ export function Console() {
           <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon animate-pulse-soft">
             ◉ SPRICHT
           </span>
+        ) : recording ? (
+          <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon animate-pulse-soft">
+            ● NIMMT AUF
+          </span>
         ) : listening ? (
           <span className="font-hud text-[11px] tracking-[0.3em] text-hud-neon animate-pulse-soft">
             ● HÖRT ZU
@@ -46,6 +51,10 @@ export function Console() {
         ) : enabled ? (
           <span className="font-hud text-[11px] tracking-[0.25em] text-hud-neon-dim">
             ◉ SPRACHE AKTIV — sag „Aphelios"
+          </span>
+        ) : !supported && pushToTalkSupported ? (
+          <span className="font-hud text-[11px] tracking-[0.25em] text-hud-neon-dim">
+            ◉ PUSH-TO-TALK — Mikrofon-Knopf drücken
           </span>
         ) : null}
       </header>
@@ -103,10 +112,24 @@ export function Console() {
           >
             <MicIcon active={enabled} />
           </button>
+        ) : pushToTalkSupported ? (
+          <button
+            type="button"
+            onClick={togglePushToTalk}
+            aria-label={recording ? "Aufnahme beenden" : "Push-to-Talk aufnehmen"}
+            title="Kein Wake-Word in diesem Browser (z. B. Firefox/Waterfox) — stattdessen: klicken, sprechen, nochmal klicken zum Senden"
+            className={`grid h-8 w-8 place-items-center rounded-full border transition-colors ${
+              recording
+                ? "border-hud-neon bg-hud-neon/20 shadow-glow-sm animate-pulse-soft"
+                : "border-hud-neon/40 hover:border-hud-neon"
+            }`}
+          >
+            <MicIcon active={recording} />
+          </button>
         ) : (
           <span
             className="font-hud text-[10px] tracking-widest text-hud-neon/40"
-            title="Web Speech API benötigt Chrome oder Edge über http://localhost"
+            title="Weder Web Speech API noch Mikrofon-Aufnahme in diesem Browser verfügbar"
           >
             SPRACHE&nbsp;N/V
           </span>

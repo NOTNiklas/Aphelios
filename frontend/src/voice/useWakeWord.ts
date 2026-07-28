@@ -21,6 +21,20 @@
  * Wichtig: Die Web-Speech-API-Spracherkennung (Wake-Word) läuft nur in
  * Chromium-basierten Browsern (Chrome/Edge) und nur in einem sicheren Kontext
  * (``localhost`` oder HTTPS) – NICHT über eine LAN-IP wie ``192.168.x.x``.
+ * Firefox-basierte Browser (Firefox, **Waterfox**, LibreWolf, …) implementieren
+ * ``SpeechRecognition`` grundsätzlich nicht (Gecko-Einschränkung, nicht von
+ * APHELIOS aus behebbar) – kein Wake-Word, kein Dauer-Zuhören dort möglich.
+ *
+ * **Push-to-Talk (Alpha 1.3, Ausbaustufe):** Für genau diesen Fall (kein
+ * ``SpeechRecognition``, aber ein Mikrofon vorhanden) gibt es eine
+ * Push-to-Talk-Alternative über ``MediaRecorder`` + die bereits vorhandene
+ * Backend-VoiceEngine (``voice.transcribe``, faster-whisper lokal) – braucht
+ * keine Browser-Spracherkennung, funktioniert deshalb auch in Waterfox. Ohne
+ * Wake-Word: ein Tastendruck startet die Aufnahme, ein zweiter beendet sie und
+ * schickt sie zur Transkription; der erkannte Text geht direkt als Befehl an
+ * dieselbe Pipeline wie ein Wake-Word-Kommando. Die nächste APHELIOS-Antwort
+ * wird danach einmalig vorgelesen (ohne dauerhaften "Sprachmodus"-Zustand –
+ * der ergibt bei Push-to-Talk keinen Sinn, da nichts kontinuierlich zuhört).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBackend } from "../lib/ws";
@@ -37,6 +51,22 @@ function playBase64Wav(base64: string): Promise<HTMLAudioElement> {
   audio.addEventListener("ended", () => URL.revokeObjectURL(url), { once: true });
   audio.addEventListener("error", () => URL.revokeObjectURL(url), { once: true });
   return audio.play().then(() => audio);
+}
+
+/** Liest einen Blob als Base64 (ohne den ``data:...;base64,``-Präfix) –
+ * gebraucht, um eine MediaRecorder-Aufnahme an ``voice.transcribe`` zu
+ * schicken (derselbe Bus-Kanal erwartet Base64, wie auch ``voice.audio``
+ * eines liefert). */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result ?? "");
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
 }
 
 const WAKE = "aphelios";
@@ -66,18 +96,37 @@ export interface VoiceApi {
   enabled: boolean;
   error: string | null;
   toggle: () => void;
+  /** Push-to-Talk-Alternative für Browser ohne ``SpeechRecognition``
+   * (Firefox/Waterfox) – true, wenn Mikrofon-Aufnahme (MediaRecorder)
+   * grundsätzlich verfügbar ist. */
+  pushToTalkSupported: boolean;
+  /** true während einer laufenden Push-to-Talk-Aufnahme. */
+  recording: boolean;
+  /** Startet/beendet eine Push-to-Talk-Aufnahme. */
+  togglePushToTalk: () => void;
 }
 
 export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
   const [supported, setSupported] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recording, setRecording] = useState(false);
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const enabledRef = useRef(false);
   const cmdRef = useRef(onCommand);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const { requestVoiceAudio } = useBackend();
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // Nach einem per Push-to-Talk gesendeten Befehl soll GENAU die nächste
+  // APHELIOS-Antwort vorgelesen werden, auch ohne dauerhaft aktiven
+  // Sprachmodus (der bei Push-to-Talk keinen Sinn ergibt).
+  const pendingSpokenReplyRef = useRef(false);
+  const { requestVoiceAudio, requestTranscription } = useBackend();
+
+  const pushToTalkSupported =
+    typeof window !== "undefined" &&
+    typeof MediaRecorder !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia;
 
   // onCommand stabil halten, ohne das Setup-Effect neu auszulösen.
   useEffect(() => {
@@ -261,7 +310,7 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
       }
       const last = state.messages[state.messages.length - 1];
       if (
-        enabledRef.current &&
+        (enabledRef.current || pendingSpokenReplyRef.current) &&
         last &&
         last.role === "aphelios" &&
         !last.streaming &&
@@ -269,10 +318,61 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
         !spoken.has(last.id)
       ) {
         spoken.add(last.id);
+        pendingSpokenReplyRef.current = false;
         speak(last.text);
       }
     });
   }, [speak]);
+
+  // -- Push-to-Talk: Aufnahme über MediaRecorder + Backend-Whisper ----------
+  // Alternative zu SpeechRecognition für Browser, die dieses API nicht
+  // implementieren (Firefox/Waterfox) – kein Wake-Word, ein Tastendruck
+  // startet/beendet die Aufnahme.
+  const startPushToTalk = useCallback(async () => {
+    if (!pushToTalkSupported || mediaRecorderRef.current) return;
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        useHud.getState().setListening(false);
+        const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+        blobToBase64(blob)
+          .then((base64) => requestTranscription(base64))
+          .then((outcome) => {
+            if (outcome.ok && outcome.text.trim()) {
+              pendingSpokenReplyRef.current = true;
+              cmdRef.current(outcome.text.trim());
+            } else if (!outcome.ok && outcome.error) {
+              setError(`STT: ${outcome.error}`);
+            }
+          })
+          .catch(() => setError("Transkription fehlgeschlagen."));
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+      useHud.getState().setListening(true);
+    } catch {
+      setError("Mikrofon-Zugriff verweigert – bitte im Browser erlauben.");
+    }
+  }, [pushToTalkSupported, requestTranscription]);
+
+  const stopPushToTalk = useCallback(() => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecording(false);
+  }, []);
+
+  const togglePushToTalk = useCallback(() => {
+    if (mediaRecorderRef.current) stopPushToTalk();
+    else void startPushToTalk();
+  }, [startPushToTalk, stopPushToTalk]);
 
   // -- An/Aus schalten (Seiteneffekte NICHT im State-Updater!) --------------
   const toggle = useCallback(() => {
@@ -307,5 +407,5 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
     }
   }, []);
 
-  return { supported, enabled, error, toggle };
+  return { supported, enabled, error, toggle, pushToTalkSupported, recording, togglePushToTalk };
 }

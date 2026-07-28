@@ -82,11 +82,12 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 
 ## Alpha 1.3 — Voice (vollwertig)  *(dieser Stand)*
 
-- 🟡 **Whisper STT (lokal)** – `voice.transcribe` über faster-whisper ist
-  real implementiert und getestet, aber noch nicht an eine
-  Aufnahme-Oberfläche im Frontend angebunden (z. B. Push-to-Talk); die
-  laufende Wake-Word-Erkennung nutzt weiterhin die bewährte Web Speech API,
-  siehe `docs/voice.md`
+- ✅ **Whisper STT (lokal)** – `voice.transcribe` über faster-whisper, an
+  eine Push-to-Talk-Oberfläche im Frontend angebunden. Aktiv als
+  automatischer Fallback in Browsern ohne `SpeechRecognition`
+  (Firefox/Waterfox – Gecko implementiert dieses Web-Standard-API
+  grundsätzlich nicht); die Wake-Word-Erkennung in Chromium (Chrome/Edge)
+  nutzt unverändert die Web Speech API, siehe `docs/voice.md`
 - ✅ **Hochwertige TTS mit natürlicher, tiefer männlicher Stimme** – Piper
   läuft lokal (kein API-Key, keine Kosten), `speak()` im Frontend nutzt sie
   automatisch, sobald ein Modell konfiguriert ist; ohne Konfiguration

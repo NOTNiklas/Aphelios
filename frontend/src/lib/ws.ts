@@ -29,13 +29,24 @@ export type VoiceSpeakOutcome =
   | { ok: true; audioBase64: string; sampleRate: number }
   | { ok: false; error: string | null };
 
+/** Ergebnis einer ``requestTranscription``-Anfrage (analog zu
+ * ``VoiceSpeakOutcome``, nur für die Sprache-zu-Text-Richtung – gedacht für
+ * Push-to-Talk in Browsern ohne Web-Speech-API-Spracherkennung, z. B.
+ * Firefox/Waterfox, siehe docs/voice.md). */
+export type VoiceTranscribeOutcome =
+  | { ok: true; text: string }
+  | { ok: false; error: string | null };
+
 class Backend {
   private ws: WebSocket | null = null;
   private mockTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private started = false;
-  // Offene "/voice.speak"-Anfragen, auf ihre Antwort wartend (id -> Resolver).
-  private voiceWaiters = new Map<string, (outcome: VoiceSpeakOutcome) => void>();
+  // Offene "voice.speak"/"voice.transcribe"-Anfragen, auf ihre Antwort
+  // wartend (id -> Resolver). Beide Richtungen teilen sich eine Map, weil
+  // ``voice.error`` für beide gilt und IDs global eindeutig sind (crypto.
+  // randomUUID) – der jeweilige Aufrufer interpretiert die Antwort selbst.
+  private voiceWaiters = new Map<string, (msg: BusMessage) => void>();
 
   start(): void {
     if (this.started) return;
@@ -59,7 +70,7 @@ class Backend {
     this.ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data) as BusMessage;
-        if (msg.topic === "voice.audio" || msg.topic === "voice.error") {
+        if (msg.topic === "voice.audio" || msg.topic === "voice.transcript" || msg.topic === "voice.error") {
           this.resolveVoiceWaiter(msg);
           return; // Antwort auf eine gezielte Anfrage, kein globaler Store-Zustand nötig.
         }
@@ -136,18 +147,7 @@ class Backend {
     const resolve = this.voiceWaiters.get(id);
     if (!resolve) return;
     this.voiceWaiters.delete(id);
-    if (msg.topic === "voice.audio") {
-      resolve({
-        ok: true,
-        audioBase64: String(msg.data.audio_base64 ?? ""),
-        sampleRate: Number(msg.data.sample_rate ?? 0),
-      });
-    } else {
-      // voice.error – der Grund wird durchgereicht, statt ihn zu verschlucken;
-      // der Aufrufer entscheidet, ob er ihn anzeigt, bevor er auf die
-      // Browser-Stimme zurückfällt.
-      resolve({ ok: false, error: msg.data.error != null ? String(msg.data.error) : null });
-    }
+    resolve(msg);
   }
 
   /** Bittet die Backend-VoiceEngine (Piper) um Sprachsynthese. Bei keinem
@@ -166,11 +166,51 @@ class Backend {
         this.voiceWaiters.delete(id);
         resolve({ ok: false, error: null });
       }, timeoutMs);
-      this.voiceWaiters.set(id, (outcome) => {
+      this.voiceWaiters.set(id, (msg) => {
         clearTimeout(timer);
-        resolve(outcome);
+        if (msg.topic === "voice.audio") {
+          resolve({
+            ok: true,
+            audioBase64: String(msg.data.audio_base64 ?? ""),
+            sampleRate: Number(msg.data.sample_rate ?? 0),
+          });
+        } else {
+          // voice.error – der Grund wird durchgereicht, statt ihn zu
+          // verschlucken; der Aufrufer entscheidet, ob er ihn anzeigt,
+          // bevor er auf die Browser-Stimme zurückfällt.
+          resolve({ ok: false, error: msg.data.error != null ? String(msg.data.error) : null });
+        }
       });
       this.ws!.send(JSON.stringify({ type: "voice.speak", id, text }));
+    });
+  }
+
+  /** Bittet die Backend-VoiceEngine (faster-whisper) um Transkription einer
+   * Audio-Aufnahme (Base64, beliebiges von ffmpeg/PyAV dekodierbares Format –
+   * z. B. was `MediaRecorder` liefert). Gedacht als Push-to-Talk-Alternative
+   * für Browser ohne Web-Speech-API-Spracherkennung (Firefox/Waterfox),
+   * siehe `useWakeWord.ts`. Whisper-Inferenz kann mehrere Sekunden dauern,
+   * daher ein spürbar längeres Timeout als bei der TTS-Anfrage. */
+  requestTranscription(audioBase64: string, timeoutMs = 20000): Promise<VoiceTranscribeOutcome> {
+    return new Promise((resolve) => {
+      if (!this.online) {
+        resolve({ ok: false, error: null });
+        return;
+      }
+      const id = crypto.randomUUID();
+      const timer = setTimeout(() => {
+        this.voiceWaiters.delete(id);
+        resolve({ ok: false, error: null });
+      }, timeoutMs);
+      this.voiceWaiters.set(id, (msg) => {
+        clearTimeout(timer);
+        if (msg.topic === "voice.transcript") {
+          resolve({ ok: true, text: String(msg.data.text ?? "") });
+        } else {
+          resolve({ ok: false, error: msg.data.error != null ? String(msg.data.error) : null });
+        }
+      });
+      this.ws!.send(JSON.stringify({ type: "voice.transcribe", id, audio_base64: audioBase64 }));
     });
   }
 
@@ -205,6 +245,7 @@ const backendApi = {
   completeStep: (index: number) => backend.completeStep(index),
   respondConfirmation: (id: string, approve: boolean) => backend.respondConfirmation(id, approve),
   requestVoiceAudio: (text: string) => backend.requestVoiceAudio(text),
+  requestTranscription: (audioBase64: string) => backend.requestTranscription(audioBase64),
 };
 
 /** React-Hook: startet die Backend-Verbindung einmalig. */
