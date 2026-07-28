@@ -250,6 +250,33 @@ Lokale Sprachein-/ausgabe – Details, Einrichtung und Bus-Schnittstelle in
   https://github.com/SYSTRAN/faster-whisper) transkribiert Audio lokal,
   Modell wird beim ersten Gebrauch automatisch heruntergeladen.
 - Beide Modelle werden lazy geladen (erst bei der ersten Anfrage).
-- `voice.transcribe` ist bisher nicht an eine Frontend-Aufnahme-Oberfläche
-  angebunden (siehe `docs/voice.md`, „Noch nicht umgesetzt") – die
-  Wake-Word-Erkennung nutzt weiterhin die Web Speech API des Browsers.
+- `voice.transcribe` ist an eine Push-to-Talk-Oberfläche im Frontend
+  angebunden – aktiv als automatischer Fallback in Browsern ohne
+  `SpeechRecognition` (Firefox/Waterfox); die Wake-Word-Erkennung in
+  Chromium (Chrome/Edge) nutzt weiterhin die Web Speech API. Details in
+  `docs/voice.md`.
+
+## Engines in Alpha 1.4
+
+### VisionEngine (real, erste Ausbaustufe)
+Bildschirm-Verständnis über drei Slash-Befehle – Details, Einrichtung und
+Bus-Schnittstelle in [`docs/vision.md`](./vision.md). Kurzfassung:
+
+- `/sieh <Frage>` – Screenshot (via `mss`) + Claude Vision beschreibt den
+  Bildschirm bzw. beantwortet die Frage; ohne `ANTHROPIC_API_KEY` Fallback
+  auf reinen OCR-Text (Tesseract), keine echte Interpretation.
+- `/lies` – nur den sichtbaren Text extrahieren, rein lokal (Tesseract OCR,
+  kein API-Key nötig).
+- `/fehler` – sucht per Regex-Heuristik nach einer sichtbaren Fehlermeldung;
+  gefunden und ein API-Key vorhanden, erklärt Claude sie.
+- **Jede** Aktion läuft über das SecurityGate (CONFIRM) – ein Screenshot
+  kann beliebig sensible Inhalte zeigen, unabhängig davon, ob er lokal
+  bleibt oder an Claude geschickt wird.
+- Screenshot und OCR laufen jeweils in einem Thread, damit eine langsame
+  Tesseract-Erkennung den Event-Loop nicht blockiert.
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Fenster-/Button-/
+  Icon-Erkennung (OpenCV) – bräuchte entweder kuratierte Referenz-Templates
+  oder ein trainiertes Modell, während `/sieh` denselben praktischen
+  Anwendungsfall über Claude Vision bereits abdeckt. Ebenso kein
+  dediziertes Tabellen-/Diagramm-Parsing (deckt Claude Vision nativ mit ab)
+  und kein automatisches/proaktives Hintergrund-Monitoring (nur On-Demand).

@@ -65,6 +65,13 @@ vor jeder Datei-Löschung/-Erstellung/-Verschiebung, jedem Programmstart und
 jeder PowerShell-Ausführung genau so das SecurityGate – siehe
 `docs/engines.md` für die konkreten Aktionen und Risikostufen.
 
+Seit Alpha 1.4 gilt dasselbe für die `VisionEngine`
+(`backend/aphelios/engines/vision_engine.py`): **jede** Bildschirmaufnahme
+läuft über `CONFIRM`, auch die rein lokale OCR-Aktion (`/lies`), die nichts
+an Claude schickt – ein Screenshot kann beliebig sensible Inhalte zeigen
+(Passwörter in Eingabefeldern, private Nachrichten, andere Fenster), genau
+wie „Passwörter anzeigen" oben explizit bestätigungspflichtig ist.
+
 ## Wichtige Falle: Bestätigung auf derselben WebSocket-Verbindung
 
 `SecurityGate.request()` blockiert, bis `confirmation.approve`/`.deny` mit

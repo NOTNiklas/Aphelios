@@ -138,7 +138,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.3.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.4.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -151,7 +151,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.3.0a1",
+            "version": "1.4.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -210,11 +210,15 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/oeffne ": ("automation.request", "name", {"action": "open_app"}),
     "/schliesse ": ("automation.request", "name", {"action": "close_app"}),
     "/loesche ": ("automation.request", "path", {"action": "delete_path"}),
+    "/sieh ": ("vision.request", "question", {"action": "describe"}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
 _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
     "/downloads": ("automation.request", {"action": "downloads"}),
+    "/sieh": ("vision.request", {"action": "describe", "question": ""}),
+    "/lies": ("vision.request", {"action": "ocr"}),
+    "/fehler": ("vision.request", {"action": "find_error"}),
 }
 
 

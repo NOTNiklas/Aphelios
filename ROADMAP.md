@@ -80,7 +80,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   schreibt eine Notiz in die Kategorie „Protokolle"; rein lesende Aktionen
   bewusst nicht
 
-## Alpha 1.3 — Voice (vollwertig)  *(dieser Stand)*
+## Alpha 1.3 — Voice (vollwertig)
 
 - ✅ **Whisper STT (lokal)** – `voice.transcribe` über faster-whisper, an
   eine Push-to-Talk-Oberfläche im Frontend angebunden. Aktiv als
@@ -100,12 +100,33 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   Ruhemodus" – bereits seit Alpha 1.0/1.1 über die Web Speech API gebaut,
   hier nur bestätigt/unverändert
 
-## Alpha 1.4 — Computer Vision
+## Alpha 1.4 — Computer Vision *(dieser Stand)*
 
-- ⬜ Bildschirmaufnahme + OCR (Tesseract / Windows OCR)
-- ⬜ Fenster-, Button-, Icon-Erkennung (OpenCV)
-- ⬜ Fehlermeldungs-Erkennung + automatische Hilfestellung
-- ⬜ Tabellen-/Diagramm-Verständnis
+- ✅ **Bildschirmaufnahme + OCR** – `/lies` nimmt den Bildschirm auf (`mss`)
+  und extrahiert sichtbaren Text rein lokal über Tesseract, kein API-Key
+  nötig. Windows-OCR (statt Tesseract) bewusst nicht zusätzlich – zwei
+  parallele OCR-Backends zu pflegen wäre ohne konkreten Zusatznutzen
+  Mehraufwand ohne Gegenwert.
+- ✅ **Fehlermeldungs-Erkennung + automatische Hilfestellung** – `/fehler`
+  durchsucht den erkannten Text per Regex-Heuristik nach typischen
+  Fehler-Mustern (deutsch + englisch) und lässt Claude die gefundene
+  Meldung erklären + nächste Schritte vorschlagen (mit `ANTHROPIC_API_KEY`).
+- 🟡 **Fenster-, Button-, Icon-Erkennung** – bewusst **nicht** über OpenCV/
+  Template-Matching (bräuchte eine kuratierte Template-Bibliothek oder ein
+  trainiertes Modell, beides eigenständige Projekte). Stattdessen deckt
+  `/sieh <Frage>` denselben praktischen Fall über Claude Vision ab („Wo ist
+  der Speichern-Button?") – funktional vorhanden, nur technisch anders
+  gelöst als ursprünglich skizziert.
+- 🟡 **Tabellen-/Diagramm-Verständnis** – ebenfalls über `/sieh` abgedeckt
+  (Claude liest Tabellen/Diagramme aus einem Screenshot nativ mit), kein
+  dedizierter Parser gebaut – wäre in den allermeisten Fällen redundant.
+- ⬜ Mehrere Monitore – aktuell wird immer nur der primäre Bildschirm
+  aufgenommen.
+- ⬜ Proaktives/automatisches Monitoring – nur On-Demand über die drei
+  Slash-Befehle, siehe `docs/vision.md` für die Abwägung.
+
+Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
+[`docs/vision.md`](./docs/vision.md).
 
 ## Alpha 1.5 — Second Brain (fortgeschritten)
 

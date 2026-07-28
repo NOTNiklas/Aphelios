@@ -49,13 +49,6 @@ class KnowledgeEngine(_StubEngine):
     topic = "knowledge.request"
 
 
-class VisionEngine(_StubEngine):
-    """Bildschirm-Verständnis: OCR, Fenster-/Button-Erkennung. TODO: Roadmap Alpha 1.4."""
-
-    name = "vision"
-    topic = "vision.request"
-
-
 class AgentEngine(_StubEngine):
     """Orchestriert mehrere parallele AI-Agenten. TODO: Roadmap Beta."""
 

@@ -99,6 +99,12 @@ class Config:
     whisper_model: str = "base"
     whisper_device: str = "cpu"
 
+    # --- Vision (Alpha 1.4, optional: Screenshot + OCR + Claude-Vision) ---
+    #: Tesseract-Sprachpakete für die OCR-Erkennung (z. B. "deu+eng" für
+    #: Deutsch+Englisch gemischt). Muss zu den tatsächlich installierten
+    #: `.traineddata`-Sprachpaketen passen, siehe docs/vision.md.
+    ocr_lang: str = "deu+eng"
+
     # --- API-Server ---
     api_host: str = "127.0.0.1"
     api_port: int = 8787
@@ -132,6 +138,7 @@ class Config:
             ),
             whisper_model=_get("APHELIOS_WHISPER_MODEL", "base"),
             whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),
+            ocr_lang=_get("APHELIOS_OCR_LANG", "deu+eng"),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),

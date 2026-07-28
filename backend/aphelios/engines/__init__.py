@@ -12,9 +12,9 @@ from aphelios.engines.stubs import (
     BrowserEngine,
     CodingEngine,
     KnowledgeEngine,
-    VisionEngine,
 )
 from aphelios.engines.system_engine import SystemEngine
+from aphelios.engines.vision_engine import VisionEngine
 from aphelios.engines.voice_engine import VoiceEngine
 from aphelios.engines.weather_engine import WeatherEngine
 

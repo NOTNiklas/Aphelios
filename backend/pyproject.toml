@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aphelios"
-version = "1.3.0a1"
+version = "1.4.0a1"
 description = "APHELIOS – Desktop AI Operating System Assistant (backend)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,11 @@ google = [
 # Braucht zusätzlich ein Piper-Sprachmodell (APHELIOS_PIPER_MODEL_PATH) –
 # siehe docs/voice.md. Whisper-Modelle lädt faster-whisper selbst herunter.
 voice = ["faster-whisper>=1.0", "piper-tts>=1.2"]
+# Bildschirm-Verständnis (VisionEngine): Screenshot + lokale OCR.
+# Braucht zusätzlich das tesseract-Kommandozeilenprogramm im PATH (kein
+# Python-Paket, siehe docs/vision.md) für OCR; Claude-Vision-Beschreibungen
+# (/sieh) brauchen stattdessen nur den ohnehin vorhandenen ANTHROPIC_API_KEY.
+vision = ["mss>=9.0", "pytesseract>=0.3", "Pillow>=10.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
 
 [project.scripts]

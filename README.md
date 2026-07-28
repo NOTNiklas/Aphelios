@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.3 · **Status:** Voice (Piper-TTS + Whisper-STT) · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.4 · **Status:** Vision (Screenshot + OCR + Claude-Vision) · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,12 +17,12 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.3-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.4-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
 AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Windows-Automation,
-lokale Sprachausgabe/-erkennung). Alle weiteren Module (Vision, Browser, Office,
-Smart Home …) sind als Schnittstellen vorbereitet und lassen sich später einfach
-ergänzen.
+lokale Sprachausgabe/-erkennung, Bildschirm-Verständnis). Alle weiteren Module
+(Browser, Office, Smart Home …) sind als Schnittstellen vorbereitet und lassen
+sich später einfach ergänzen.
 
 > Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was
 > bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
@@ -38,6 +38,9 @@ separate UI nötig):
 | `/oeffne <Programm>` / `/schliesse <Programm>` | Startet/beendet ein Programm – mit Bestätigung |
 | `/loesche <Pfad>` | Löscht eine Datei/einen Ordner – mit Bestätigung |
 | `/downloads` | Listet den Downloads-Ordner (nur lesend) |
+| `/sieh <Frage>` | Screenshot + Claude beschreibt/beantwortet – mit Bestätigung |
+| `/lies` | Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung |
+| `/fehler` | Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
 
@@ -57,6 +60,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Dauer-Zuhören (Chrome/Edge); Push-to-Talk als Fallback in Firefox/Waterfox |
 | **Sprachausgabe (TTS)** | ✅ Real, optional (Alpha 1.3) | Piper – natürliche, tiefe Stimme lokal, kein API-Key; Fallback auf Browser-Stimme – [`docs/voice.md`](./docs/voice.md) |
 | **Spracherkennung (STT)** | ✅ Real, optional (Alpha 1.3) | faster-whisper lokal über Push-to-Talk – automatischer Fallback für Browser ohne Web-Speech-API (Firefox/Waterfox) – [`docs/voice.md`](./docs/voice.md) |
+| **Vision (Bildschirm-Verständnis)** | ✅ Real, erste Ausbaustufe (Alpha 1.4) | Screenshot + Claude Vision (`/sieh`), lokales OCR (`/lies`), Fehlererkennung (`/fehler`) – immer mit Bestätigung – [`docs/vision.md`](./docs/vision.md) |
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
 | **Gmail / Kalender** | ✅ Real, optional | Eigener Google-OAuth-Client nötig, siehe [`docs/integrations.md`](./docs/integrations.md) |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
@@ -64,7 +68,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
-| **Vision / Browser / Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
+| **Browser / Coding / Knowledge …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
 
 ---
 
@@ -87,7 +91,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 │   │ System   │Conversation│ Memory │ Weather  │ Mail/Kalender│ │
 │   │ (psutil) │(Claude API)│(Obsidian)│(Open-Meteo)│ (Google, opt.)│
 │   └──────────┴────────────┴────────┴──────────┴─────────────┘ │
-│              Vision · Automation · Browser · … (Stubs)         │
+│      Vision · Automation · Voice (real) · Browser · Coding … (Stubs) │
 │                                                                │
 │   SecurityGate  ·  PluginLoader  ·  Config                     │
 └────────────────────────────────────────────────────────────---┘
@@ -157,7 +161,7 @@ und Frontend je in einem eigenen Fenster (über `backend\run.bat` und
 im Standardbrowser. Beide Fenster offen lassen, während APHELIOS läuft;
 ein Fenster schließen beendet nur den jeweiligen Server.
 
-### 4 · (Optional) Gmail, Kalender & Handy-Zugriff
+### 5 · (Optional) Gmail, Kalender & Handy-Zugriff
 
 Für echte Mail-/Kalender-Daten und um APHELIOS auf dem Handy zu installieren,
 siehe die Schritt-für-Schritt-Anleitung: [`docs/integrations.md`](./docs/integrations.md).
@@ -198,5 +202,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.3 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.4 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

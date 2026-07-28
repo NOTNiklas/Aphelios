@@ -28,8 +28,8 @@ Frontend (HUD)  ──WebSocket──►  API-Server (FastAPI)
                      │
         ┌────────────┼─────────────┬───────────────┐
         ▼            ▼             ▼               ▼
-   SystemEngine  Conversation   Memory      (Voice, Vision,
-   (psutil)      Engine         Engine       Automation … Stubs)
+   SystemEngine  Conversation   Memory      Voice, Vision,
+   (psutil)      Engine         Engine      Automation … (Rest: Stubs)
 ```
 
 ---
@@ -92,10 +92,10 @@ Details in [`docs/security.md`](./docs/security.md).
 | **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
 | **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |
 | **VoiceEngine** | ✅ real, optional (Alpha 1.3) | Piper-TTS + faster-whisper-STT lokal, `voice.speak`/`voice.transcribe` |
+| **VisionEngine** | ✅ real, erste Ausbaustufe (Alpha 1.4) | Screenshot + OCR + Claude Vision, alles über SecurityGate (`/sieh`, `/lies`, `/fehler`) |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
 | BrowserEngine | 🔌 stub | Browser-Steuerung |
 | KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |
-| VisionEngine | 🔌 stub | OCR, Bildschirm-Verständnis |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und

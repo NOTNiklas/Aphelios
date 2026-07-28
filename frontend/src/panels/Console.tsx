@@ -120,7 +120,7 @@ export function Console() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Frage eingeben … (/plan, /denke, /run, /oeffne, /schliesse, /loesche, /downloads)"
+          placeholder="Frage eingeben … (/plan, /denke, /run, /oeffne, /schliesse, /loesche, /downloads, /sieh, /lies, /fehler)"
           className="flex-1 bg-transparent font-hud text-sm text-hud-neon placeholder:text-hud-neon/30 focus:outline-none"
           autoFocus
         />
