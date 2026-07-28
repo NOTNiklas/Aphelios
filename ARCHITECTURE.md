@@ -65,7 +65,12 @@ Registriert Engines, startet/stoppt alle gemeinsam und überwacht ihre Tasks.
 
 ### Config (`config.py`)
 Lädt Einstellungen aus Umgebungsvariablen / `.env` (Provider, API-Keys, Vault-Pfad,
-Poll-Intervall, Modell-ID, API-Host/Port). Siehe `.env.example`.
+Poll-Intervall, Modell-ID, API-Host/Port). Siehe `.env.example`. Relative
+Pfade (Vault, SQLite-Index, Google-Token, Piper-Modell) werden fest gegen
+`BACKEND_ROOT` (den `backend`-Ordner) verankert statt gegen das aktuelle
+Arbeitsverzeichnis – das Backend lässt sich auf mehrere Arten starten
+(Terminal, `run.bat`, IDE-Run-Konfiguration, …), jede mit potenziell anderem
+cwd. Absolute Pfade bleiben davon unberührt.
 
 ### SecurityGate (`security.py`)
 Klassifiziert Aktionen und blockiert gefährliche, bis eine Bestätigung vorliegt.

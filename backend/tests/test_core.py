@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 import pytest
 
-from aphelios.core.config import Config, _get
+from aphelios.core.config import BACKEND_ROOT, Config, _get, _resolve_path
 from aphelios.core.engine import BaseEngine
 from aphelios.core.event_bus import Event, EventBus
 from aphelios.core.manager import EngineManager
@@ -31,6 +32,36 @@ def test_config_has_anthropic_respects_stripped_key(monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "   ")
     # Nur Leerzeichen → nach dem Trimmen leer → gilt als "kein Key".
     assert Config.from_env().has_anthropic is False
+
+
+def test_resolve_path_keeps_absolute_paths_unchanged():
+    # Plattformunabhängig testen: ein echter absoluter Pfad dieses Systems.
+    absolute = str(Path(__file__).resolve())
+    assert _resolve_path(absolute) == Path(absolute)
+
+
+def test_resolve_path_anchors_relative_paths_to_backend_root():
+    # Regression: relative Pfade (z. B. der Default "./data/google_token.json")
+    # wurden bisher gegen das aktuelle Arbeitsverzeichnis aufgelöst – je
+    # nachdem, wie/von wo das Backend gestartet wurde (Terminal mit `cd
+    # backend`, run.bat, IDE-Run-Konfiguration, …), zeigte derselbe relative
+    # Pfad auf unterschiedliche Orte. Ein einmal per scripts/google_auth.py
+    # erzeugtes Token wurde dadurch je nach Startart nicht mehr gefunden,
+    # obwohl an der Anmeldung selbst nichts falsch war.
+    assert _resolve_path("./data/google_token.json") == BACKEND_ROOT / "data/google_token.json"
+
+
+def test_resolve_path_independent_of_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert _resolve_path("./vault") == BACKEND_ROOT / "vault"
+
+
+def test_from_env_anchors_default_paths_to_backend_root(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config = Config.from_env()
+    assert config.vault_path == BACKEND_ROOT / "vault"
+    assert config.db_path == BACKEND_ROOT / "data" / "aphelios.sqlite"
+    assert config.google_token_path == BACKEND_ROOT / "data" / "google_token.json"
 
 
 # -- Event-Bus ---------------------------------------------------------------

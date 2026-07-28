@@ -21,6 +21,25 @@ try:  # dotenv ist optional, aber empfohlen
 except ImportError:  # pragma: no cover
     pass
 
+#: Backend-Wurzel (core/ -> aphelios/ -> backend/, zwei Ebenen über dieser
+#: Datei) – fester Anker für relative Pfade aus der .env (Vault, SQLite-Index,
+#: Google-Token). Das Backend lässt sich auf mehrere Arten starten (Terminal
+#: mit `cd backend`, `run.bat`, eine IDE-Run-Konfiguration, …), jede mit
+#: potenziell anderem Arbeitsverzeichnis. Ohne diesen festen Anker würde z. B.
+#: ein einmal per `scripts/google_auth.py` erzeugtes google_token.json je nach
+#: Startart an unterschiedlichen, cwd-abhängigen Stellen gesucht – Gmail/
+#: Kalender wirken dann "kaputt", obwohl an der Anmeldung selbst nichts falsch
+#: ist. Absolute Pfade (z. B. ein Windows-Laufwerkspfad) bleiben unverändert.
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_path(value: str) -> Path:
+    """Löst einen Pfad aus der .env auf: relativ wird gegen ``BACKEND_ROOT``
+    verankert statt gegen das aktuelle Arbeitsverzeichnis, absolut bleibt
+    absolut."""
+    path = Path(value)
+    return path if path.is_absolute() else BACKEND_ROOT / path
+
 
 def _get(name: str, default: str) -> str:
     """Liest eine Umgebungsvariable und entfernt umschließende Leer-/Anführungszeichen.
@@ -99,17 +118,17 @@ class Config:
             openai_model=_get("APHELIOS_OPENAI_MODEL", "gpt-4o"),
             ollama_host=_get("APHELIOS_OLLAMA_HOST", "http://localhost:11434"),
             ollama_model=_get("APHELIOS_OLLAMA_MODEL", "llama3.1"),
-            vault_path=Path(_get("APHELIOS_VAULT_PATH", "./vault")),
-            db_path=Path(_get("APHELIOS_DB_PATH", "./data/aphelios.sqlite")),
+            vault_path=_resolve_path(_get("APHELIOS_VAULT_PATH", "./vault")),
+            db_path=_resolve_path(_get("APHELIOS_DB_PATH", "./data/aphelios.sqlite")),
             stats_interval=float(_get("APHELIOS_STATS_INTERVAL", "2.0")),
             weather_city=_get("APHELIOS_WEATHER_CITY", "Berlin"),
             weather_interval=float(_get("APHELIOS_WEATHER_INTERVAL", "900")),
             google_client_id=_get("GOOGLE_CLIENT_ID", ""),
             google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
-            google_token_path=Path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
+            google_token_path=_resolve_path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
             google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
             piper_model_path=(
-                Path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
+                _resolve_path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
             ),
             whisper_model=_get("APHELIOS_WHISPER_MODEL", "base"),
             whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),

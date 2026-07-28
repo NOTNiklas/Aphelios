@@ -76,6 +76,14 @@ Daten statt der Vorschau.
 > Die Token-Datei enthält ein Zugriffs-Refresh-Token – **nicht committen**
 > (liegt standardmäßig unter `./data/`, das laut `.gitignore` ignoriert wird).
 
+**Warum "Mails"/"Kalender" nach der Anmeldung trotzdem wieder auf
+Mock-Vorschau zurückfallen können:** `APHELIOS_GOOGLE_TOKEN_PATH` ist relativ
+(`./data/google_token.json`) und wird fest gegen den `backend`-Ordner
+verankert – unabhängig davon, aus welchem Arbeitsverzeichnis `python -m
+aphelios` bzw. `run.bat` tatsächlich gestartet wird. Ein absoluter Pfad in
+der `.env` (z. B. `C:\Users\<Name>\Aphelios\backend\data\google_token.json`)
+funktioniert wie gehabt unverändert.
+
 ---
 
 ## WhatsApp — bewusst (noch) ohne Code
