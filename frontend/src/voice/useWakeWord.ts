@@ -127,13 +127,20 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
         /* egal */
       }
 
-      requestVoiceAudio(trimmed).then((result) => {
-        if (!result) {
-          speakBrowser(trimmed); // kein Piper-Modell/Backend offline/Timeout
+      requestVoiceAudio(trimmed).then((outcome) => {
+        if (!outcome.ok) {
+          // Ein echter Backend-Fehler (z. B. Piper-Modell konnte nicht
+          // geladen werden) soll sichtbar sein, statt stillschweigend im
+          // Browser-Fallback zu verschwinden – sonst bleibt für den Nutzer
+          // für immer unklar, warum die konfigurierte Stimme nie erklingt.
+          // `error: null` bedeutet dagegen nur "kein Backend/Timeout" – das
+          // ist im Offline-Modus normal und keine Fehlermeldung wert.
+          if (outcome.error) setError(`TTS: ${outcome.error}`);
+          speakBrowser(trimmed);
           return;
         }
         useHud.getState().setSpeaking(true);
-        playBase64Wav(result.audioBase64)
+        playBase64Wav(outcome.audioBase64)
           .then((audio) => {
             currentAudioRef.current = audio;
             audio.addEventListener(

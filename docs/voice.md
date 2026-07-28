@@ -84,6 +84,15 @@ Fertig: `speak()` im Frontend fragt jetzt zuerst das Backend; antwortet es
 (kein Modell konfiguriert, Backend offline, Timeout) läuft automatisch die
 bisherige Browser-Stimme weiter – kein Absturz, kein stummes APHELIOS.
 
+**Fehlerdiagnose:** Meldet das Backend einen echten Fehler (`voice.error`,
+z. B. weil der Pfad in `APHELIOS_PIPER_MODEL_PATH` nicht existiert, die
+`.onnx.json` fehlt oder `piper-tts` nicht installiert ist), erscheint die
+genaue Fehlermeldung rot in der AI-Konsole (Präfix `TTS:`) – zusätzlich zum
+automatischen Rückfall auf die Browser-Stimme. Klingt die Stimme trotz
+konfiguriertem Pfad weiterhin robotisch, zeigt dieser Text den tatsächlichen
+Grund (falscher Pfad, fehlende Datei, Backend nicht neu gestartet nach der
+`.env`-Änderung …), statt stumm zu scheitern.
+
 ---
 
 ## Spracherkennung verbessern: faster-whisper

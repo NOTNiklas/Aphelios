@@ -20,13 +20,22 @@ export interface VoiceAudioResult {
   sampleRate: number;
 }
 
+/** Ergebnis einer ``requestVoiceAudio``-Anfrage – im Fehlerfall inkl. Grund
+ * (statt ihn stillschweigend zu verschlucken), damit der Aufrufer entscheiden
+ * kann, ob/wie er den Nutzer informiert, bevor er auf die Browser-Stimme
+ * zurückfällt. ``error: null`` bedeutet: kein Backend/Timeout (kein
+ * konfigurationsrelevanter Fehler, einfach kein Server erreichbar). */
+export type VoiceSpeakOutcome =
+  | { ok: true; audioBase64: string; sampleRate: number }
+  | { ok: false; error: string | null };
+
 class Backend {
   private ws: WebSocket | null = null;
   private mockTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private started = false;
   // Offene "/voice.speak"-Anfragen, auf ihre Antwort wartend (id -> Resolver).
-  private voiceWaiters = new Map<string, (result: VoiceAudioResult | null) => void>();
+  private voiceWaiters = new Map<string, (outcome: VoiceSpeakOutcome) => void>();
 
   start(): void {
     if (this.started) return;
@@ -129,32 +138,37 @@ class Backend {
     this.voiceWaiters.delete(id);
     if (msg.topic === "voice.audio") {
       resolve({
+        ok: true,
         audioBase64: String(msg.data.audio_base64 ?? ""),
         sampleRate: Number(msg.data.sample_rate ?? 0),
       });
     } else {
-      resolve(null); // voice.error – Aufrufer fällt auf Browser-TTS zurück
+      // voice.error – der Grund wird durchgereicht, statt ihn zu verschlucken;
+      // der Aufrufer entscheidet, ob er ihn anzeigt, bevor er auf die
+      // Browser-Stimme zurückfällt.
+      resolve({ ok: false, error: msg.data.error != null ? String(msg.data.error) : null });
     }
   }
 
-  /** Bittet die Backend-VoiceEngine (Piper) um Sprachsynthese. Gibt ``null``
-   * zurück, wenn kein Backend/keine Antwort/kein Piper-Modell verfügbar ist
-   * (Timeout `timeoutMs`) – Aufrufer sollen dann auf die Browser-Stimme
-   * zurückfallen, statt den Nutzer stumm zu lassen. */
-  requestVoiceAudio(text: string, timeoutMs = 6000): Promise<VoiceAudioResult | null> {
+  /** Bittet die Backend-VoiceEngine (Piper) um Sprachsynthese. Bei keinem
+   * Backend/keiner Antwort (Timeout `timeoutMs`) kommt ``{ok: false, error:
+   * null}`` zurück – Aufrufer sollen dann still auf die Browser-Stimme
+   * zurückfallen. Bei einem echten Backend-Fehler (z. B. Piper-Modell konnte
+   * nicht geladen werden) enthält ``error`` den Grund. */
+  requestVoiceAudio(text: string, timeoutMs = 6000): Promise<VoiceSpeakOutcome> {
     return new Promise((resolve) => {
       if (!this.online) {
-        resolve(null);
+        resolve({ ok: false, error: null });
         return;
       }
       const id = crypto.randomUUID();
       const timer = setTimeout(() => {
         this.voiceWaiters.delete(id);
-        resolve(null);
+        resolve({ ok: false, error: null });
       }, timeoutMs);
-      this.voiceWaiters.set(id, (result) => {
+      this.voiceWaiters.set(id, (outcome) => {
         clearTimeout(timer);
-        resolve(result);
+        resolve(outcome);
       });
       this.ws!.send(JSON.stringify({ type: "voice.speak", id, text }));
     });
