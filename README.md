@@ -117,6 +117,15 @@ python -m aphelios
 Das Backend läuft nun auf `http://127.0.0.1:8787`
 (Health-Check: `curl http://127.0.0.1:8787/health`).
 
+> **Windows:** Nach der Einrichtung reicht künftig `run.bat` im `backend`-
+> Ordner (Doppelklick oder `.\run.bat`) statt der letzten beiden Zeilen –
+> aktiviert automatisch das `.venv` und startet dann. Das vermeidet den
+> häufigsten Windows-Stolperstein: `python -m aphelios` **ohne** aktiviertes
+> `.venv` startet stillschweigend mit dem globalen Python, dem die
+> installierten Pakete (z. B. `piper-tts`) fehlen – Symptome dafür sind
+> `ModuleNotFoundError`/`No module named …`, obwohl `pip install` vorher
+> erfolgreich lief.
+
 ### 2 · Frontend starten
 
 ```bash

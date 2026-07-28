@@ -93,6 +93,15 @@ konfiguriertem Pfad weiterhin robotisch, zeigt dieser Text den tatsächlichen
 Grund (falscher Pfad, fehlende Datei, Backend nicht neu gestartet nach der
 `.env`-Änderung …), statt stumm zu scheitern.
 
+**Häufigste Ursache für „No module named 'piper'" trotz erfolgreichem
+`pip install -e ".[voice]"`:** Windows hat zwei verschiedene Python-
+Installationen im Spiel – das globale Python und das Projekt-`.venv`. Landet
+die Installation im `.venv`, `python -m aphelios` wird aber **ohne**
+aktiviertes `.venv` gestartet, läuft der Server mit dem globalen Python, dem
+das Paket fehlt. Am zuverlässigsten: `backend\run.bat` verwenden (aktiviert
+das `.venv` automatisch, bevor es startet) statt `python -m aphelios` direkt
+aufzurufen.
+
 ---
 
 ## Spracherkennung verbessern: faster-whisper
