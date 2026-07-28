@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.4 · **Status:** Vision (Screenshot + OCR + Claude-Vision) · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.5 · **Status:** Second Brain (Vektorsuche, RAG, proaktives Wiederfinden) · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,10 +17,11 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.4-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.5-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
 AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Windows-Automation,
-lokale Sprachausgabe/-erkennung, Bildschirm-Verständnis). Alle weiteren Module
+lokale Sprachausgabe/-erkennung, Bildschirm-Verständnis, semantische Vault-Suche mit
+RAG-Wissensabfragen). Alle weiteren Module
 (Browser, Office, Smart Home …) sind als Schnittstellen vorbereitet und lassen
 sich später einfach ergänzen.
 
@@ -34,6 +35,7 @@ separate UI nötig):
 |---|---|
 | `/plan <Aufgabe>` | Zerlegt eine Aufgabe in Schritte – echt im „Aufgaben"-Panel, abhakbar |
 | `/denke <Frage>` | Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort) |
+| `/wissen <Frage>` | Beantwortet NUR auf Basis des Obsidian-Vaults (RAG, mit Quellenangabe) |
 | `/run <PowerShell-Befehl>` | Führt einen Befehl aus – **immer mit Bestätigungsdialog** |
 | `/oeffne <Programm>` / `/schliesse <Programm>` | Startet/beendet ein Programm – mit Bestätigung |
 | `/loesche <Pfad>` | Löscht eine Datei/einen Ordner – mit Bestätigung |
@@ -57,7 +59,8 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Reasoning** | ✅ Real (Alpha 1.1) | Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl – `/denke <Frage>` im Chat |
 | **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
 | **Automation** | ✅ Real (Alpha 1.2, Windows) | PowerShell, Datei-Operationen, Programme starten/schließen – immer mit Bestätigung |
-| **Memory / Second Brain** | ✅ Real | Schreibt Obsidian-Markdown mit Tags & Backlinks + SQLite-Index; Automation & Planning protokollieren ihre Aktionen/Projekte automatisch |
+| **Memory / Second Brain** | ✅ Real (Alpha 1.5) | Schreibt Obsidian-Markdown mit Tags & Backlinks; semantische Suche über ChromaDB (lokal, kein API-Key) mit automatischem Volltext-Fallback; jeder Treffer mit „vor 3 Monaten"-Alter – Automation & Planning protokollieren ihre Aktionen/Projekte automatisch |
+| **Knowledge (RAG)** | ✅ Real (Alpha 1.5) | `/wissen <Frage>` beantwortet ausschließlich auf Basis gefundener Vault-Notizen, mit Quellenangabe – ehrliche Absage ohne Treffer |
 | **Sprachaktivierung** | ✅ Real | Wake-Word „Aphelios" + Dauer-Zuhören (Chrome/Edge); Push-to-Talk als Fallback in Firefox/Waterfox |
 | **Sprachausgabe (TTS)** | ✅ Real, optional (Alpha 1.3) | Piper – natürliche, tiefe Stimme lokal, kein API-Key; Fallback auf Browser-Stimme – [`docs/voice.md`](./docs/voice.md) |
 | **Spracherkennung (STT)** | ✅ Real, optional (Alpha 1.3) | faster-whisper lokal über Push-to-Talk – automatischer Fallback für Browser ohne Web-Speech-API (Firefox/Waterfox) – [`docs/voice.md`](./docs/voice.md) |
@@ -69,7 +72,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
-| **Browser / Coding / Knowledge …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
+| **Browser / Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
 
 ---
 
@@ -203,5 +206,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.4 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.5 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

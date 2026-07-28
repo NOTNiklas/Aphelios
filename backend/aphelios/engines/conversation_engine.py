@@ -134,7 +134,7 @@ class ConversationEngine(BaseEngine):
         hits = (result or {}).get("results") or []
         if not hits:
             return ""
-        lines = [f'- „{h["title"]}" ({h["category"]})' for h in hits[:3]]
+        lines = [f'- „{h["title"]}" ({h["category"]}, {h.get("age", "?")})' for h in hits[:3]]
         return (
             "\n\nMögliche relevante Notizen aus dem Obsidian-Vault des Nutzers "
             "(nutze sie nur, wenn sie wirklich zur Frage passen):\n" + "\n".join(lines)

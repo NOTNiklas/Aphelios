@@ -162,7 +162,13 @@ async def test_conversation_memory_context_only_when_relevant(tmp_path):
     convo = ConversationEngine(bus, config, SecurityGate(bus))
     await convo.start()
 
-    assert "Docker Fehler" in await convo._memory_context("Docker")
+    context = await convo._memory_context("Docker")
+    assert "Docker Fehler" in context
+    # Proaktives Wiederfinden (Alpha 1.5): der Kontext-Hinweis nennt auch,
+    # WIE ALT die gefundene Notiz ist ("vor 3 Monaten") statt nur Titel +
+    # Kategorie – macht aus einem anonymen Suchtreffer ein "das hattest du
+    # schon mal notiert".
+    assert "heute" in context
     assert await convo._memory_context("etwas völlig anderes xyz123") == ""
     await memory.stop()
 
@@ -320,4 +326,24 @@ async def test_reasoning_engine_memory_tool_reports_no_hits(tmp_path):
     await engine.handle(Event("reasoning.request", {"id": "r3", "text": "Weißt du noch was über Raketentriebwerke?"}))
 
     assert "Keine passenden Notizen im Vault gefunden" in "".join(tokens)
+    await memory.stop()
+
+
+async def test_reasoning_engine_memory_tool_shows_age_of_hits(tmp_path):
+    # Proaktives Wiederfinden (Alpha 1.5): ein Vault-Treffer wird mit seinem
+    # Alter angezeigt ("vor 3 Monaten"), nicht nur mit Titel + Kategorie.
+    bus, config, memory = _memory(tmp_path)
+    await memory.start()
+    await memory.handle(Event("memory.note", {"title": "Raketentriebwerk-Notizen", "content": "Schub, Treibstoff."}))
+    engine = ReasoningEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+
+    tokens: list[str] = []
+    bus.subscribe("chat.token", lambda e: tokens.append(e.data["text"]))
+
+    await engine.handle(Event("reasoning.request", {"id": "r4", "text": "Weißt du noch was über Raketentriebwerke?"}))
+
+    full = "".join(tokens)
+    assert "Raketentriebwerk-Notizen" in full
+    assert "heute" in full
     await memory.stop()

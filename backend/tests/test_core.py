@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from pathlib import Path
 
 import pytest
 
 from aphelios.core.config import BACKEND_ROOT, Config, _get, _resolve_path
 from aphelios.core.engine import BaseEngine
-from aphelios.core.event_bus import Event, EventBus
+from aphelios.core.event_bus import Event, EventBus, request
 from aphelios.core.manager import EngineManager
 from aphelios.core.security import RiskLevel, SecurityGate
-from aphelios.engines.memory_engine import MemoryEngine
+from aphelios.engines.memory_engine import MemoryEngine, _age_phrase, _search_tokens
 from aphelios.engines.weather_engine import describe_weather_code
 
 
@@ -213,6 +214,204 @@ async def test_memory_engine_auto_links_related_notes(tmp_path):
         config.vault_path / "Notizen" / "Docker-Compose-Notizen.md"
     ).read_text(encoding="utf-8")
     assert "[[Docker Setup Notizen]]" in note
+
+
+# -- MemoryEngine: Vektorsuche (Alpha 1.5) -----------------------------------
+class _FakeChromaCollection:
+    """Steht für eine echte ChromaDB-Kollektion ein – injiziert per
+    ``engine._chroma_collection`` (derselbe Trick wie ``engine._piper_voice``
+    in test_voice.py), damit Tests deterministisch bleiben und kein echtes
+    Embedding-Modell brauchen."""
+
+    def __init__(self, query_result: dict | None = None) -> None:
+        self.upserts: list[dict] = []
+        self._query_result = query_result or {"ids": [[]], "metadatas": [[]], "distances": [[]]}
+
+    def upsert(self, ids, documents, metadatas) -> None:  # noqa: ANN001
+        self.upserts.append({"ids": ids, "documents": documents, "metadatas": metadatas})
+
+    def query(self, query_texts, n_results):  # noqa: ANN001
+        return self._query_result
+
+
+async def test_memory_search_falls_back_to_fulltext_when_chroma_unavailable(tmp_path):
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    engine._chroma_init_error = "simuliert: chromadb nicht installiert"  # erzwingt Fallback
+
+    await engine.handle(
+        Event("memory.note", {"title": "Docker Fehler", "content": "Fehler beim Start.", "tags": ["docker"]})
+    )
+    result = await request(bus, "memory.search", "memory.result", {"query": "Docker"})
+
+    assert result["results"][0]["title"] == "Docker Fehler"
+    assert result["results"][0]["age"] == "heute"
+    await engine.stop()
+
+
+async def test_memory_note_upserts_into_chroma_when_available(tmp_path):
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    fake = _FakeChromaCollection()
+    engine._chroma_collection = fake  # _ensure_chroma() gibt das jetzt direkt zurück
+
+    await engine.handle(Event("memory.note", {"title": "Testnotiz", "content": "Inhalt hier"}))
+
+    assert len(fake.upserts) == 1
+    assert fake.upserts[0]["metadatas"][0]["title"] == "Testnotiz"
+    await engine.stop()
+
+
+async def test_memory_note_save_succeeds_even_if_chroma_upsert_fails(tmp_path):
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+
+    class _BrokenCollection(_FakeChromaCollection):
+        def upsert(self, ids, documents, metadatas):  # noqa: ANN001
+            raise RuntimeError("Vektor-Index kaputt")
+
+    engine._chroma_collection = _BrokenCollection()
+
+    await engine.handle(Event("memory.note", {"title": "Trotzdem gespeichert", "content": "x"}))
+
+    assert (config.vault_path / "Notizen" / "Trotzdem-gespeichert.md").exists()
+    await engine.stop()
+
+
+async def test_memory_search_uses_semantic_hits_and_filters_low_relevance(tmp_path):
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    now = time.time()
+    engine._chroma_collection = _FakeChromaCollection(
+        {
+            "ids": [["vault/wissen/relevant.md", "vault/notizen/irrelevant.md"]],
+            "metadatas": [
+                [
+                    {"title": "Relevant", "category": "Wissen", "created_at": now},
+                    {"title": "Irrelevant", "category": "Notizen", "created_at": now},
+                ]
+            ],
+            # Unter der _MAX_SEMANTIC_DISTANCE-Schwelle bleibt, drüber fliegt raus –
+            # sonst würde bei nur einer Notiz im Vault JEDE Anfrage "Treffer" liefern.
+            "distances": [[0.5, 1.6]],
+        }
+    )
+
+    result = await request(bus, "memory.search", "memory.result", {"query": "irgendwas"})
+
+    assert [r["title"] for r in result["results"]] == ["Relevant"]
+    await engine.stop()
+
+
+async def test_memory_search_falls_back_to_fulltext_when_semantic_hits_all_filtered_out(tmp_path):
+    # Regression, live über Playwright gefunden: "/plan Kuchen backen und
+    # Kueche putzen" legt eine Notiz an, "/wissen Was war nochmal mein
+    # Plan?" fand sie danach NICHT – die Vektorsuche lief (ChromaDB
+    # verfügbar), lieferte aber nur Treffer über der Distanz-Schwelle
+    # zurück (leere Liste statt None). Der alte Code fiel nur bei
+    # "Vektorsuche komplett nicht verfügbar" (None) auf Volltext zurück,
+    # nicht bei "lief, aber nichts Relevantes gefunden" ([]).
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    engine._chroma_collection = _FakeChromaCollection()  # start(): leere Query-Ergebnisse
+
+    await engine.handle(
+        Event(
+            "memory.note",
+            {
+                "title": "Kuchen backen und Kueche putzen",
+                "content": "Status: 0/2 Schritte erledigt\n\n- [ ] Kuchen backen\n- [ ] Kueche putzen",
+                "category": "Projekte",
+                "tags": ["plan", "projekt"],
+            },
+        )
+    )
+    # Simuliert: Vektorsuche lief, aber der einzige "Nachbar" liegt über der
+    # Relevanz-Schwelle (die Frage teilt semantisch kaum Wörter mit der
+    # Notiz) – die Fake-Query gibt absichtlich einen zu hohen Distanzwert
+    # zurück, unabhängig von der Anfrage.
+    engine._chroma_collection._query_result = {
+        "ids": [["irrelevant-id"]],
+        "metadatas": [[{"title": "Kuchen backen und Kueche putzen", "category": "Projekte", "created_at": time.time()}]],
+        "distances": [[1.65]],
+    }
+
+    result = await request(bus, "memory.search", "memory.result", {"query": "Was war nochmal mein Plan?"})
+
+    assert [r["title"] for r in result["results"]] == ["Kuchen backen und Kueche putzen"]
+    await engine.stop()
+
+
+async def test_fulltext_search_matches_single_keyword_not_whole_phrase(tmp_path):
+    # Der alte Code verlangte die GANZE Anfrage als einen Substring – bei
+    # einer natürlichen Frage praktisch nie ein Treffer. Jetzt reicht ein
+    # bedeutungstragendes Wort daraus.
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    engine._chroma_init_error = "simuliert: keine Vektorsuche in diesem Test"
+
+    await engine.handle(
+        Event("memory.note", {"title": "Docker Compose Notizen", "content": "Mehrere Container starten."})
+    )
+
+    result = await request(bus, "memory.search", "memory.result", {"query": "Wie starte ich meinen Docker Container nochmal?"})
+
+    assert [r["title"] for r in result["results"]] == ["Docker Compose Notizen"]
+    await engine.stop()
+
+
+async def test_fulltext_search_matches_tags(tmp_path):
+    bus = EventBus()
+    config = Config(vault_path=tmp_path / "vault", db_path=tmp_path / "db.sqlite")
+    engine = MemoryEngine(bus, config, SecurityGate(bus))
+    await engine.start()
+    engine._chroma_init_error = "simuliert: keine Vektorsuche in diesem Test"
+
+    await engine.handle(
+        Event(
+            "memory.note",
+            {"title": "Kuchen backen und Kueche putzen", "content": "- [ ] Kuchen backen", "tags": ["plan"]},
+        )
+    )
+
+    result = await request(bus, "memory.search", "memory.result", {"query": "Was war nochmal mein Plan?"})
+
+    assert [r["title"] for r in result["results"]] == ["Kuchen backen und Kueche putzen"]
+    await engine.stop()
+
+
+def test_search_tokens_drops_stopwords_and_keeps_keywords():
+    assert _search_tokens("Was war nochmal mein Plan?") == ["plan"]
+    assert _search_tokens("Wie starte ich meinen Docker Container nochmal?") == [
+        "starte",
+        "docker",
+        "container",
+    ]
+    # Nur Stoppwörter/zu kurze Wörter -> leer, kein Absturz.
+    assert _search_tokens("Was ist das?") == []
+
+
+def test_age_phrase_buckets():
+    now = time.time()
+    assert _age_phrase(now) == "heute"
+    assert _age_phrase(now - 1.5 * 86400) == "gestern"
+    assert _age_phrase(now - 3 * 86400) == "vor 3 Tagen"
+    assert _age_phrase(now - 21 * 86400) == "vor 3 Wochen"
+    assert _age_phrase(now - 90 * 86400) == "vor 3 Monaten"
+    assert _age_phrase(now - 400 * 86400) == "vor 1 Jahr"
+    assert _age_phrase(now - 800 * 86400) == "vor 2 Jahren"
 
 
 # -- WeatherEngine -------------------------------------------------------

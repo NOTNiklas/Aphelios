@@ -280,3 +280,63 @@ Bus-Schnittstelle in [`docs/vision.md`](./vision.md). Kurzfassung:
   Anwendungsfall über Claude Vision bereits abdeckt. Ebenso kein
   dediziertes Tabellen-/Diagramm-Parsing (deckt Claude Vision nativ mit ab)
   und kein automatisches/proaktives Hintergrund-Monitoring (nur On-Demand).
+
+## Engines in Alpha 1.5
+
+### MemoryEngine – Vektorsuche (erweitert)
+`memory.search` durchsucht den Vault jetzt in zwei Stufen statt nur per
+SQL-`LIKE`:
+
+1. **Semantische Suche über [ChromaDB](https://www.trychroma.com/)** – lokale
+   Embeddings (Standard-Modell `all-MiniLM-L6-v2`, kein API-Key nötig; wird
+   beim ersten Gebrauch automatisch heruntergeladen und lokal
+   zwischengespeichert, `pip install -e ".[vector]"`). Jede gespeicherte
+   Notiz wird zusätzlich zum SQLite-Eintrag in eine Chroma-Kollektion
+   upserted (Notiz-Pfad als ID, Update statt Duplikat wie beim SQL-Index).
+   Treffer über einer kalibrierten Distanz-Schwelle (`_MAX_SEMANTIC_DISTANCE`)
+   werden verworfen – sonst käme bei nur wenigen Notizen im Vault selbst eine
+   thematisch völlig fremde Anfrage als „Treffer" zurück (ChromaDB liefert
+   immer die *nächsten* Nachbarn, unabhängig von der tatsächlichen Ähnlichkeit).
+2. **SQL-Volltextsuche (Fallback)** – greift, wenn ChromaDB fehlt/nicht
+   erreichbar ist, ODER wenn die Vektorsuche zwar lief, aber (nach dem
+   Distanz-Filter) nichts Relevantes fand. Letzteres ist der häufigere Fall
+   in der Praxis: kurze Rückfragen wie „Was war nochmal mein Plan?" teilen
+   mit dem kleinen Embedding-Modell oft kaum Bedeutung mit der gemeinten
+   Notiz, ein einzelnes Schlüsselwort daraus („Plan", z. B. als Tag gesetzt)
+   findet sie trotzdem. Die Volltextsuche zerlegt die Anfrage dafür in
+   einzelne Wörter (kurze Füll-/Fragewörter wie „was"/"mein"/"ist" werden
+   verworfen) und sucht jedes davon in Titel, Inhalt UND Tags – nicht mehr
+   die komplette Anfrage als einen einzigen Text-Block wie zuvor.
+
+Kein installiertes ChromaDB oder ein fehlgeschlagener Modell-Download (kein
+Internet, Firmen-Firewall) führt zu keinem Fehler – die Suche fällt einfach
+automatisch auf reine Volltextsuche zurück, Aufrufer bemerken nur die
+Trefferqualität, keinen Unterschied im Verhalten.
+
+**Proaktives Wiederfinden:** Jeder Treffer (aus beiden Suchwegen) trägt
+zusätzlich ein `age`-Feld ("heute", "vor 3 Wochen", "vor 2 Jahren" …) – macht
+aus einem anonymen Suchtreffer sichtbar „das hattest du schon mal notiert".
+Genutzt von `ConversationEngine._memory_context()`, `ReasoningEngine`
+(Werkzeug „memory") und `KnowledgeEngine` (siehe unten).
+
+### KnowledgeEngine (real)
+Ausgelöst über `/wissen <Frage>`. Klassisches RAG (Retrieval-Augmented
+Generation) ausschließlich über den eigenen Obsidian-Vault:
+
+1. Fragt `memory.search` ab und zeigt die gefundenen Notizen sichtbar im
+   Chat (Titel + Alter).
+2. Ohne Treffer: ehrliche Absage statt einer erfundenen Antwort
+   ("Dazu finde ich nichts im Vault …").
+3. Mit Treffern, aber ohne `ANTHROPIC_API_KEY`: nur die Fundliste, keine
+   Synthese – dasselbe Fallback-Prinzip wie bei Planning-/ReasoningEngine.
+4. Mit Treffern und API-Key: lädt die **vollen Notiz-Texte von der Platte**
+   (der Suchindex liefert bewusst nur Metadaten) und lässt Claude
+   **ausschließlich** auf dieser Basis antworten, mit Quellenangabe.
+
+Unterscheidet sich bewusst von den beiden bestehenden Vault-Nutzern:
+`ConversationEngine` reicht Treffer nur als kurzen Kontext-Hinweis in den
+System-Prompt (Hintergrundwissen, keine gezielte Anfrage);
+`ReasoningEngine` wählt den Vault nur als eine von mehreren möglichen
+Quellen. `KnowledgeEngine` durchsucht **immer** gezielt den Vault und
+antwortet **ausschließlich** daraus – für den Fall „was habe ich mir dazu
+notiert?" statt beiläufigem Kontext.

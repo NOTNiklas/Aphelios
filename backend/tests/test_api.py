@@ -109,6 +109,17 @@ async def test_denke_slash_command_routes_to_reasoning_request():
     assert received[0].data["text"] == "Warum ist der Himmel blau?"
 
 
+async def test_wissen_slash_command_routes_to_knowledge_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("knowledge.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "x2b", "text": "/wissen Was habe ich über Docker notiert?"})
+
+    assert len(received) == 1
+    assert received[0].data["text"] == "Was habe ich über Docker notiert?"
+
+
 async def test_plan_step_complete_message_routes_correctly():
     bus = EventBus()
     received: list[Event] = []
@@ -252,7 +263,14 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
     engine_events: list[Event] = []
     bus.subscribe("chat.token", lambda e: tokens.append(e.data["text"]))
     bus.subscribe("chat.response", lambda e: responses.append(e))
-    for topic in ("chat.request", "plan.request", "reasoning.request", "automation.request", "vision.request"):
+    for topic in (
+        "chat.request",
+        "plan.request",
+        "reasoning.request",
+        "knowledge.request",
+        "automation.request",
+        "vision.request",
+    ):
         bus.subscribe(topic, lambda e: engine_events.append(e))
 
     await _handle_client_message(bus, {"type": "chat", "id": "h1", "text": "/help"})
@@ -265,7 +283,19 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
     # angezeigten Text ohnehin komplett ersetzt.
     full_text = "".join(tokens)
     assert full_text.strip() == responses[0].data["text"]
-    for command in ("/plan", "/denke", "/run", "/oeffne", "/schliesse", "/loesche", "/downloads", "/sieh", "/lies", "/fehler"):
+    for command in (
+        "/plan",
+        "/denke",
+        "/wissen",
+        "/run",
+        "/oeffne",
+        "/schliesse",
+        "/loesche",
+        "/downloads",
+        "/sieh",
+        "/lies",
+        "/fehler",
+    ):
         assert command in full_text
 
 

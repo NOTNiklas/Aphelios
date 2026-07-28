@@ -7,11 +7,11 @@ from aphelios.engines.mail_engine import MailEngine
 from aphelios.engines.memory_engine import MemoryEngine
 from aphelios.engines.planning_engine import PlanningEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
+from aphelios.engines.knowledge_engine import KnowledgeEngine
 from aphelios.engines.stubs import (
     AgentEngine,
     BrowserEngine,
     CodingEngine,
-    KnowledgeEngine,
 )
 from aphelios.engines.system_engine import SystemEngine
 from aphelios.engines.vision_engine import VisionEngine

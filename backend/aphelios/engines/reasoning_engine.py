@@ -117,7 +117,7 @@ class ReasoningEngine(BaseEngine):
             if not hits:
                 await say("_Keine passenden Notizen im Vault gefunden._\n\n")
                 return ""
-            lines = [f'„{h["title"]}" ({h["category"]})' for h in hits[:3]]
+            lines = [f'„{h["title"]}" ({h["category"]}, {h.get("age", "?")})' for h in hits[:3]]
             await say(f"_Gefunden: {', '.join(lines)}._\n\n")
             return "Relevante Vault-Notizen: " + "; ".join(lines)
 

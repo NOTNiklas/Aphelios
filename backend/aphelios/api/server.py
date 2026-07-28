@@ -138,7 +138,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.4.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.5.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -151,7 +151,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.4.0a1",
+            "version": "1.5.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -206,6 +206,7 @@ def create_app(config: Config | None = None) -> FastAPI:
 _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/plan ": ("plan.request", "task", {}),
     "/denke ": ("reasoning.request", "text", {}),
+    "/wissen ": ("knowledge.request", "text", {}),
     "/run ": ("automation.request", "command", {"action": "run_powershell"}),
     "/oeffne ": ("automation.request", "name", {"action": "open_app"}),
     "/schliesse ": ("automation.request", "name", {"action": "close_app"}),
@@ -227,6 +228,7 @@ _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
 _COMMAND_HELP: list[tuple[str, str]] = [
     ("/plan <Aufgabe>", "Zerlegt eine Aufgabe in Schritte – echt im „Aufgaben\"-Panel, abhakbar"),
     ("/denke <Frage>", "Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort)"),
+    ("/wissen <Frage>", "Beantwortet NUR auf Basis des Obsidian-Vaults (RAG, mit Quellenangabe)"),
     ("/run <PowerShell-Befehl>", "Führt einen Befehl aus – immer mit Bestätigungsdialog"),
     ("/oeffne <Programm>", "Startet ein Programm – mit Bestätigung"),
     ("/schliesse <Programm>", "Beendet ein Programm – mit Bestätigung"),

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aphelios"
-version = "1.4.0a1"
+version = "1.5.0a1"
 description = "APHELIOS – Desktop AI Operating System Assistant (backend)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,7 +23,11 @@ dependencies = [
 [project.optional-dependencies]
 # Optional GPU telemetry (NVIDIA). Gracefully skipped if unavailable.
 gpu = ["nvidia-ml-py>=12.535"]
-# Optional local vector memory (future).
+# Semantische Vektorsuche über den Vault (MemoryEngine, Alpha 1.5). Lokale
+# Embeddings (kein API-Key nötig) – das Modell wird beim ersten Gebrauch
+# automatisch heruntergeladen. Ohne dieses Extra (oder falls der einmalige
+# Modell-Download fehlschlägt) fällt memory.search automatisch auf die
+# bisherige SQL-Volltextsuche zurück, siehe docs/engines.md.
 vector = ["chromadb>=0.4"]
 # Gmail + Google Kalender (MailEngine/CalendarEngine). Erfordert eigenen
 # OAuth-Client des Nutzers – siehe docs/integrations.md.

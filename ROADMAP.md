@@ -100,7 +100,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
   Ruhemodus" – bereits seit Alpha 1.0/1.1 über die Web Speech API gebaut,
   hier nur bestätigt/unverändert
 
-## Alpha 1.4 — Computer Vision *(dieser Stand)*
+## Alpha 1.4 — Computer Vision
 
 - ✅ **Bildschirmaufnahme + OCR** – `/lies` nimmt den Bildschirm auf (`mss`)
   und extrahiert sichtbaren Text rein lokal über Tesseract, kein API-Key
@@ -128,7 +128,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 [`docs/vision.md`](./docs/vision.md).
 
-## Alpha 1.5 — Second Brain (fortgeschritten)
+## Alpha 1.5 — Second Brain (fortgeschritten) *(dieser Stand)*
 
 - ✅ Automatische Verlinkung & Graph-Aufbau (MemoryEngine, siehe oben)
 - ✅ Automatisches Protokoll statt manuellem Merken – Automation (Alpha 1.2)
@@ -138,9 +138,22 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   Chat-Nachrichten – das würde die kuratierten Kategorien mit rohem
   Gesprächsverlauf zumüllen, für den es bereits einen eigenen,
   nicht-Obsidian-Speicher gibt (`memory.kv`, siehe ConversationEngine)
-- ⬜ Vektorsuche (ChromaDB / Qdrant) über den Vault
-- ⬜ Proaktives Wiederfinden („Das hattest du vor 8 Monaten gelernt")
-- ⬜ Knowledge-Engine (RAG über Dokumentation)
+- ✅ **Vektorsuche (ChromaDB) über den Vault** – `memory.search` sucht zuerst
+  semantisch (lokale Embeddings, kein API-Key), fällt automatisch auf eine
+  wortweise SQL-Volltextsuche (Titel/Inhalt/Tags) zurück, wenn ChromaDB
+  fehlt/nicht erreichbar ist ODER die Vektorsuche zwar lief, aber keinen
+  ausreichend relevanten Treffer fand (Distanz-Schwelle) – bewusst KEIN
+  Qdrant zusätzlich, ein lokaler, eingebetteter Vektorstore reicht für
+  Alpha 1.5 aus, siehe `docs/engines.md`
+- ✅ **Proaktives Wiederfinden** – jeder Vault-Treffer trägt ein `age`-Feld
+  ("vor 3 Monaten"/"heute"), sichtbar in Chat- (ConversationEngine),
+  Analyse- (ReasoningEngine) und Wissens-Antworten (KnowledgeEngine)
+- ✅ **Knowledge-Engine (RAG) über den Vault** – `/wissen <Frage>`
+  durchsucht den Vault, lädt die Volltexte der Treffer und lässt Claude
+  ausschließlich auf dieser Basis antworten (mit Quellenangabe); ohne
+  Treffer ehrliche Absage statt erfundener Antwort. Bewusst NICHT: RAG über
+  beliebige externe Dokumentation (PDFs, Webseiten) – das ist eine spätere
+  Ausbaustufe, aktuell nur der eigene Obsidian-Vault als Wissensquelle.
 
 ## Alpha 1.6 — Developer & Office
 

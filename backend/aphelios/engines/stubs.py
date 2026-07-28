@@ -42,13 +42,6 @@ class BrowserEngine(_StubEngine):
     topic = "browser.request"
 
 
-class KnowledgeEngine(_StubEngine):
-    """Wissensabruf / RAG über den Vault. TODO: Roadmap Alpha 1.5."""
-
-    name = "knowledge"
-    topic = "knowledge.request"
-
-
 class AgentEngine(_StubEngine):
     """Orchestriert mehrere parallele AI-Agenten. TODO: Roadmap Beta."""
 

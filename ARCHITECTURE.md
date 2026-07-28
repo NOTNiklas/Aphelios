@@ -84,7 +84,7 @@ Details in [`docs/security.md`](./docs/security.md).
 |---|---|---|
 | **SystemEngine** | ✅ real | System-Telemetrie via `psutil`, publisht `system.stats` |
 | **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback), persistenter Kontext über MemoryEngine |
-| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen mit automatischer Verlinkung, SQLite-Index + generischer KV-Store |
+| **MemoryEngine** | ✅ real (Vektorsuche seit Alpha 1.5) | Obsidian-Vault-Notizen mit automatischer Verlinkung; semantische Suche über ChromaDB mit automatischem Volltext-Fallback (Titel/Inhalt/Tags) + generischer KV-Store |
 | **WeatherEngine** | ✅ real | Echtes Wetter via Open-Meteo (kein API-Key) |
 | **MailEngine** | ✅ real, optional | Gmail lesen (eigener Google-OAuth-Client nötig) |
 | **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen (dieselbe Anmeldung) |
@@ -93,9 +93,9 @@ Details in [`docs/security.md`](./docs/security.md).
 | **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |
 | **VoiceEngine** | ✅ real, optional (Alpha 1.3) | Piper-TTS + faster-whisper-STT lokal, `voice.speak`/`voice.transcribe` |
 | **VisionEngine** | ✅ real, erste Ausbaustufe (Alpha 1.4) | Screenshot + OCR + Claude Vision, alles über SecurityGate (`/sieh`, `/lies`, `/fehler`) |
+| **KnowledgeEngine** | ✅ real (Alpha 1.5) | RAG ausschließlich über den Obsidian-Vault, mit Quellenangabe (`/wissen`) |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
 | BrowserEngine | 🔌 stub | Browser-Steuerung |
-| KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und
