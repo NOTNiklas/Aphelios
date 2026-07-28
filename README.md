@@ -148,6 +148,15 @@ npm run tauri build      # erzeugt eine native Windows-App
 > Der Tauri-Build wird auf einem Windows-System durchgeführt. Siehe
 > [`docs/design-system.md`](./docs/design-system.md) und die Tauri-Doku.
 
+### 4 · Windows: alles auf einmal starten
+
+Nach der einmaligen Einrichtung oben (Schritte 1 + 2) reicht künftig ein
+Doppelklick auf **`Start-APHELIOS.bat`** im Projekt-Root – startet Backend
+und Frontend je in einem eigenen Fenster (über `backend\run.bat` und
+`frontend\run.bat`) und öffnet danach automatisch `http://localhost:5173`
+im Standardbrowser. Beide Fenster offen lassen, während APHELIOS läuft;
+ein Fenster schließen beendet nur den jeweiligen Server.
+
 ### 4 · (Optional) Gmail, Kalender & Handy-Zugriff
 
 Für echte Mail-/Kalender-Daten und um APHELIOS auf dem Handy zu installieren,
@@ -165,6 +174,7 @@ aphelios/
 ├── docs/              # Detail-Dokumentation je Teilsystem
 ├── ARCHITECTURE.md    # Systemarchitektur
 ├── ROADMAP.md         # Vollständige Vision → Meilensteine
+├── Start-APHELIOS.bat # Windows: Backend + Frontend + Browser in einem
 └── README.md
 ```
 
