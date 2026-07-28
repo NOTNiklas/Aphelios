@@ -35,6 +35,14 @@
  * dieselbe Pipeline wie ein Wake-Word-Kommando. Die nächste APHELIOS-Antwort
  * wird danach einmalig vorgelesen (ohne dauerhaften "Sprachmodus"-Zustand –
  * der ergibt bei Push-to-Talk keinen Sinn, da nichts kontinuierlich zuhört).
+ *
+ * **Wann spricht APHELIOS überhaupt?** Standardmäßig NUR während des
+ * Sprachmodus – Wake-Word aktiv (``enabled``) oder direkt nach einem
+ * Push-to-Talk-Befehl (genau eine Antwort). Ohne Sprachmodus antwortet
+ * APHELIOS nur schriftlich, kein ungefragtes Vorlesen. Zusätzlich gibt es
+ * einen expliziten Lautsprecher-Button (``useHud().speakerOn``, siehe
+ * ``Console.tsx``) – ist er an, wird IMMER vorgelesen, auch bei normal
+ * getippten Nachrichten ohne jeden Sprachmodus.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useBackend } from "../lib/ws";
@@ -309,8 +317,12 @@ export function useWakeWord(onCommand: (text: string) => void): VoiceApi {
         if (m.role === "aphelios" && m.streaming) seenStreaming.add(m.id);
       }
       const last = state.messages[state.messages.length - 1];
+      // Nur sprechen im Sprachmodus (Wake-Word aktiv ODER gerade per
+      // Push-to-Talk gesendet) ODER wenn der Lautsprecher-Button explizit an
+      // ist – sonst bleibt es beim reinen Text, kein ungefragtes Vorlesen.
+      const shouldSpeak = enabledRef.current || pendingSpokenReplyRef.current || state.speakerOn;
       if (
-        (enabledRef.current || pendingSpokenReplyRef.current) &&
+        shouldSpeak &&
         last &&
         last.role === "aphelios" &&
         !last.streaming &&

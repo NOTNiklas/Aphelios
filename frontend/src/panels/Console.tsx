@@ -9,11 +9,19 @@ export function Console() {
   const messages = useHud((s) => s.messages);
   const listening = useHud((s) => s.listening);
   const speaking = useHud((s) => s.speaking);
+  const speakerOn = useHud((s) => s.speakerOn);
+  const setSpeakerOn = useHud((s) => s.setSpeakerOn);
   const { sendChat } = useBackend();
   const { supported, enabled, error, toggle, pushToTalkSupported, recording, togglePushToTalk } =
     useWakeWord((text) => sendChat(text));
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // "Denkt" = die letzte Nachricht ist noch vom Nutzer, d. h. die
+  // APHELIOS-Antwort hat noch nicht einmal mit dem ersten Token begonnen
+  // (sobald sie beginnt, hängt store/hud.ts sofort eine neue Aphelios-
+  // Nachricht an, die dann schon den eigenen Streaming-Cursor zeigt).
+  const thinking = messages.length > 0 && messages[messages.length - 1].role === "user";
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -56,6 +64,10 @@ export function Console() {
           <span className="font-hud text-[11px] tracking-[0.25em] text-hud-neon-dim">
             ◉ PUSH-TO-TALK — Mikrofon-Knopf drücken
           </span>
+        ) : speakerOn ? (
+          <span className="font-hud text-[11px] tracking-[0.25em] text-hud-neon-dim">
+            🔊 LAUTSPRECHER AN
+          </span>
         ) : null}
       </header>
 
@@ -85,6 +97,20 @@ export function Console() {
               </span>
             </motion.div>
           ))}
+          {thinking && (
+            <motion.div
+              key="thinking"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="mb-1.5 flex items-center gap-2 font-hud text-sm"
+            >
+              <span className="shrink-0 font-display text-xs tracking-widest text-hud-neon text-glow">
+                APHELIOS ›
+              </span>
+              <ThinkingDots />
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
@@ -135,6 +161,19 @@ export function Console() {
           </span>
         )}
         <button
+          type="button"
+          onClick={() => setSpeakerOn(!speakerOn)}
+          aria-label={speakerOn ? "Antworten vorlesen ausschalten" : "Antworten vorlesen einschalten"}
+          title="Antworten immer vorlesen, auch außerhalb des Sprachmodus"
+          className={`grid h-8 w-8 place-items-center rounded-full border transition-colors ${
+            speakerOn
+              ? "border-hud-neon bg-hud-neon/20 shadow-glow-sm"
+              : "border-hud-neon/40 hover:border-hud-neon"
+          }`}
+        >
+          <SpeakerIcon active={speakerOn} />
+        </button>
+        <button
           type="submit"
           className="rounded border border-hud-neon/50 px-3 py-1 font-hud text-xs tracking-widest text-hud-neon transition-colors hover:bg-hud-neon/15"
         >
@@ -161,5 +200,46 @@ function MicIcon({ active }: { active: boolean }) {
       <path d="M5 10a7 7 0 0 0 14 0" />
       <line x1="12" y1="17" x2="12" y2="22" />
     </svg>
+  );
+}
+
+function SpeakerIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={active ? "#00ff88" : "rgba(0,255,136,0.7)"}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="4,9 8,9 12,5 12,19 8,15 4,15" />
+      {active ? (
+        <>
+          <path d="M16 8a5 5 0 0 1 0 8" />
+          <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </>
+      ) : (
+        <path d="M16 9l5 6M21 9l-5 6" />
+      )}
+    </svg>
+  );
+}
+
+/** Drei nacheinander hüpfende Punkte – sichtbar, solange auf das erste Token
+ * einer Antwort gewartet wird (siehe `thinking` in `Console`). */
+function ThinkingDots() {
+  return (
+    <span className="flex items-center gap-1 py-1" aria-label="APHELIOS denkt nach">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full bg-hud-neon animate-bounce"
+          style={{ animationDelay: `${i * 0.15}s` }}
+        />
+      ))}
+    </span>
   );
 }

@@ -24,6 +24,9 @@ neon-grün, extrem clean. Es soll aussehen wie aus einem Science-Fiction-Film �
 - **Partikel** – dezente, driftende Punkte im Hintergrund
 - **Puls** – atmende Opazität für „lebendige" Elemente
 - **Typewriter** – animierte, Token-weise erscheinende Konsolen-Antworten
+- **Denk-Punkte** – drei nacheinander hüpfende Punkte in der AI-Konsole,
+  solange auf das erste Antwort-Token gewartet wird (bevor der Typewriter
+  überhaupt etwas zu zeigen hat) – macht die sonst stille Wartezeit sichtbar
 
 ## Typografie
 

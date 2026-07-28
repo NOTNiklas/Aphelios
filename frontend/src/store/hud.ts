@@ -28,11 +28,16 @@ interface HudState {
   listening: boolean;
   /** Sprachausgabe (TTS) läuft gerade – für den pulsierenden Core relevant. */
   speaking: boolean;
+  /** Lautsprecher-Button: liest APHELIOS Antworten IMMER vor, auch ohne
+   * aktiven Sprachmodus (Wake-Word/Push-to-Talk) – unabhängiges, explizites
+   * Ein/Aus zusätzlich zum impliziten "während des Sprachmodus sprechen". */
+  speakerOn: boolean;
 
   // -- Aktionen (vom Transport / UI aufgerufen) --
   setLink: (link: Link) => void;
   setListening: (listening: boolean) => void;
   setSpeaking: (speaking: boolean) => void;
+  setSpeakerOn: (on: boolean) => void;
   ingest: (msg: BusMessage) => void;
   addUserMessage: (id: string, text: string) => void;
   resolveConfirmation: (id: string) => void;
@@ -57,10 +62,12 @@ export const useHud = create<HudState>((set) => ({
   confirmations: [],
   listening: false,
   speaking: false,
+  speakerOn: false,
 
   setLink: (link) => set({ link }),
   setListening: (listening) => set({ listening }),
   setSpeaking: (speaking) => set({ speaking }),
+  setSpeakerOn: (on) => set({ speakerOn: on }),
 
   addUserMessage: (id, text) =>
     set((s) => ({ messages: [...s.messages, { id, role: "user", text }] })),

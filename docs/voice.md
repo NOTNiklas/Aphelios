@@ -56,7 +56,8 @@ Die Wake-Word-Erkennung läuft im Browser über die **Web Speech API**
    APHELIOS mit „Ja, Sir?" und hört weiter zu.
 3. Nachfolgende Sprache wird als Text an die AI-Konsole übergeben.
 4. Ein Stopp-Kommando beendet den Zuhör-Modus.
-5. Ist der Sprachmodus aktiv, liest APHELIOS Antworten vor (siehe TTS unten).
+5. Ist der Sprachmodus aktiv, liest APHELIOS Antworten vor (siehe TTS unten
+   und „Wann spricht APHELIOS?").
 
 > Läuft nur in Chromium-basierten Browsern (Chrome/Edge) und nur in einem
 > sicheren Kontext (`localhost` oder HTTPS) – NICHT über eine LAN-IP wie
@@ -89,6 +90,23 @@ einzelner, bewusst gestarteter Befehl – technisch bräuchte kontinuierliches
 Zuhören ohne Wake-Word entweder ein eigenes, lokales Wake-Word-Modell (z. B.
 openWakeWord/Porcupine) oder Voice-Activity-Detection, beides bewusst noch
 nicht umgesetzt (siehe „Noch nicht umgesetzt" unten).
+
+---
+
+## Wann spricht APHELIOS überhaupt? (Lautsprecher-Button)
+
+APHELIOS liest Antworten standardmäßig **nur im Sprachmodus** vor – also
+während Wake-Word aktiv ist, oder als einmalige Antwort direkt nach einem
+Push-to-Talk-Befehl. Bei normal getippten Nachrichten antwortet APHELIOS nur
+schriftlich, ohne ungefragt vorzulesen.
+
+Zusätzlich gibt es in der AI-Konsole einen eigenen **Lautsprecher-Button**
+(neben dem Mikrofon-Button) – ein Klick schaltet dauerhaft um, ob APHELIOS
+*jede* Antwort vorliest, unabhängig vom Sprachmodus. So lässt sich
+Sprachausgabe auch beim reinen Tippen nutzen, ohne jedes Mal den Sprachmodus
+aktivieren zu müssen. Die Kopfzeile der Konsole zeigt „🔊 LAUTSPRECHER AN",
+solange der Button aktiv ist. Zustand: `useHud().speakerOn` /
+`setSpeakerOn()`.
 
 ---
 
