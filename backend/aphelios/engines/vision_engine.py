@@ -143,6 +143,27 @@ class VisionEngine(BaseEngine):
     async def _ocr(self, png_bytes: bytes) -> str:
         return await asyncio.to_thread(_extract_text, png_bytes, self.config.ocr_lang)
 
+    async def _safe_capture(self, request_id: str) -> bytes | None:
+        """Screenshot mit klarer Fehlermeldung statt kryptischem Modul-Fehler,
+        falls ``mss`` fehlt – Gegenstück zu ``_safe_ocr``. Ohne das würde ein
+        fehlendes ``mss`` (z. B. nach einem Update ohne erneutes
+        ``pip install -e ".[vision]"``) nur als rohes "No module named 'mss'"
+        über den allgemeinen Exception-Handler durchgereicht – korrekt, aber
+        nicht actionable. Gibt ``None`` zurück, wenn bereits geantwortet
+        wurde (Aufrufer soll dann nichts mehr tun)."""
+        try:
+            return await self._capture_screenshot()
+        except ImportError:
+            await self._reply(
+                request_id,
+                'Bildschirmaufnahme nicht verfügbar: mss nicht installiert '
+                '(pip install -e ".[vision]"), siehe docs/vision.md.',
+            )
+            return None
+        except Exception as exc:  # noqa: BLE001
+            await self._reply(request_id, f"Bildschirmaufnahme fehlgeschlagen: {exc}"[:300])
+            return None
+
     async def _confirm_capture(self, request_id: str, purpose: str) -> bool:
         """Fragt vor JEDER Bildschirmaufnahme das SecurityGate – Bildschirminhalt
         kann beliebig sensibel sein, unabhängig davon, ob er lokal bleibt oder
@@ -186,10 +207,8 @@ class VisionEngine(BaseEngine):
         if not await self._confirm_capture(request_id, "Screenshot analysieren"):
             return
 
-        try:
-            png = await self._capture_screenshot()
-        except Exception as exc:  # noqa: BLE001
-            await self._reply(request_id, f"Bildschirmaufnahme fehlgeschlagen: {exc}"[:300])
+        png = await self._safe_capture(request_id)
+        if png is None:
             return
 
         if self._client is not None:
@@ -248,10 +267,8 @@ class VisionEngine(BaseEngine):
     async def _read_text(self, data: dict, request_id: str) -> None:
         if not await self._confirm_capture(request_id, "Bildschirmtext lesen (lokales OCR)"):
             return
-        try:
-            png = await self._capture_screenshot()
-        except Exception as exc:  # noqa: BLE001
-            await self._reply(request_id, f"Bildschirmaufnahme fehlgeschlagen: {exc}"[:300])
+        png = await self._safe_capture(request_id)
+        if png is None:
             return
         text = await self._safe_ocr(png, request_id)
         if text is None:
@@ -263,10 +280,8 @@ class VisionEngine(BaseEngine):
         purpose = "Bildschirm nach Fehlermeldungen durchsuchen"
         if not await self._confirm_capture(request_id, purpose):
             return
-        try:
-            png = await self._capture_screenshot()
-        except Exception as exc:  # noqa: BLE001
-            await self._reply(request_id, f"Bildschirmaufnahme fehlgeschlagen: {exc}"[:300])
+        png = await self._safe_capture(request_id)
+        if png is None:
             return
         text = await self._safe_ocr(png, request_id)
         if text is None:

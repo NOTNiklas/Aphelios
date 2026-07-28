@@ -188,6 +188,56 @@ async def test_describe_reports_screenshot_failure(monkeypatch):
     assert "no display" in text
 
 
+async def test_describe_reports_missing_mss_dependency(monkeypatch):
+    # Regression: ein Nutzer, der Alpha 1.4 gepullt aber "pip install -e
+    # .[vision]" nicht (erneut) ausgeführt hat, bekam bisher nur den rohen
+    # "No module named 'mss'"-Fehler ohne Hinweis, was zu tun ist – über den
+    # allgemeinen Exception-Handler in _describe/_read_text/_find_error.
+    def fail():
+        raise ImportError("No module named 'mss'")
+
+    monkeypatch.setattr(vision_module, "_grab_screenshot_png", fail)
+    bus = EventBus()
+    _auto_approve(bus)
+    engine = _engine(bus)
+
+    text = await _run(engine, "describe", question="")
+
+    assert "mss" in text.lower()
+    assert "nicht installiert" in text.lower()
+    assert 'pip install -e ".[vision]"' in text
+
+
+async def test_ocr_reports_missing_mss_dependency(monkeypatch):
+    def fail():
+        raise ImportError("No module named 'mss'")
+
+    monkeypatch.setattr(vision_module, "_grab_screenshot_png", fail)
+    bus = EventBus()
+    _auto_approve(bus)
+    engine = _engine(bus)
+
+    text = await _run(engine, "ocr")
+
+    assert "mss" in text.lower()
+    assert "nicht installiert" in text.lower()
+
+
+async def test_find_error_reports_missing_mss_dependency(monkeypatch):
+    def fail():
+        raise ImportError("No module named 'mss'")
+
+    monkeypatch.setattr(vision_module, "_grab_screenshot_png", fail)
+    bus = EventBus()
+    _auto_approve(bus)
+    engine = _engine(bus)
+
+    text = await _run(engine, "find_error")
+
+    assert "mss" in text.lower()
+    assert "nicht installiert" in text.lower()
+
+
 async def test_describe_reports_missing_ocr_dependencies(monkeypatch):
     monkeypatch.setattr(vision_module, "_grab_screenshot_png", lambda: b"PNG")
 
