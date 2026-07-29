@@ -212,6 +212,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/schliesse ": ("automation.request", "name", {"action": "close_app"}),
     "/loesche ": ("automation.request", "path", {"action": "delete_path"}),
     "/sieh ": ("vision.request", "question", {"action": "describe"}),
+    "/browse ": ("browser.request", "text", {}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
@@ -220,6 +221,7 @@ _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
     "/sieh": ("vision.request", {"action": "describe", "question": ""}),
     "/lies": ("vision.request", {"action": "ocr"}),
     "/fehler": ("vision.request", {"action": "find_error"}),
+    "/browse": ("browser.request", {"text": ""}),
 }
 
 #: Einzige Quelle der Wahrheit für ``/help``/``/hilfe`` – bei jedem neuen
@@ -237,6 +239,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/sieh <Frage>", "Screenshot + Claude beschreibt/beantwortet – mit Bestätigung"),
     ("/lies", "Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung"),
     ("/fehler", "Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung"),
+    ("/browse <URL> [Frage]", "Öffnet eine Seite (echter Browser) und beantwortet Fragen dazu – mit Bestätigung"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 

@@ -1,6 +1,7 @@
 """APHELIOS-Engines – reale MVP-Engines und Schnittstellen-Stubs."""
 
 from aphelios.engines.automation_engine import AutomationEngine
+from aphelios.engines.browser_engine import BrowserEngine
 from aphelios.engines.calendar_engine import CalendarEngine
 from aphelios.engines.conversation_engine import ConversationEngine
 from aphelios.engines.mail_engine import MailEngine
@@ -10,7 +11,6 @@ from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.knowledge_engine import KnowledgeEngine
 from aphelios.engines.stubs import (
     AgentEngine,
-    BrowserEngine,
     CodingEngine,
 )
 from aphelios.engines.system_engine import SystemEngine

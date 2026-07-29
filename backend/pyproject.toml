@@ -45,6 +45,11 @@ voice = ["faster-whisper>=1.0", "piper-tts>=1.2"]
 # Python-Paket, siehe docs/vision.md) für OCR; Claude-Vision-Beschreibungen
 # (/sieh) brauchen stattdessen nur den ohnehin vorhandenen ANTHROPIC_API_KEY.
 vision = ["mss>=9.0", "pytesseract>=0.3", "Pillow>=10.0"]
+# Lesendes Öffnen von Webseiten (BrowserEngine, Alpha 1.6): Playwright
+# steuert ein echtes Chromium. Braucht zusätzlich einmalig
+# "playwright install chromium" (lädt den Browser selbst, kein pip-Paket),
+# siehe docs/browser.md.
+browser = ["playwright>=1.40"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
 
 [project.scripts]

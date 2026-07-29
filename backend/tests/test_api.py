@@ -255,6 +255,29 @@ async def test_fehler_noarg_command_routes_to_vision_find_error():
     assert received[0].data == {"action": "find_error", "id": "vi4"}
 
 
+# -- Chat-Nachrichten-Routing (Alpha 1.6: BrowserEngine) ----------------------
+async def test_browse_with_url_and_question_routes_to_browser_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("browser.request", lambda e: received.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "b1", "text": "/browse example.com Was steht da?"}
+    )
+
+    assert received[0].data == {"text": "example.com Was steht da?", "id": "b1"}
+
+
+async def test_browse_without_argument_routes_to_browser_request_with_empty_text():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("browser.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "b2", "text": "/browse"})
+
+    assert received[0].data == {"text": "", "id": "b2"}
+
+
 # -- Chat-Nachrichten-Routing (/help, /hilfe) ---------------------------------
 async def test_help_command_lists_every_slash_command_without_hitting_an_engine():
     bus = EventBus()
@@ -270,6 +293,7 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "knowledge.request",
         "automation.request",
         "vision.request",
+        "browser.request",
     ):
         bus.subscribe(topic, lambda e: engine_events.append(e))
 
@@ -295,6 +319,7 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "/sieh",
         "/lies",
         "/fehler",
+        "/browse",
     ):
         assert command in full_text
 

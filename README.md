@@ -43,6 +43,7 @@ separate UI nötig):
 | `/sieh <Frage>` | Screenshot + Claude beschreibt/beantwortet – mit Bestätigung |
 | `/lies` | Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung |
 | `/fehler` | Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung |
+| `/browse <URL> [Frage]` | Öffnet eine Seite (echter Browser) und beantwortet Fragen dazu – mit Bestätigung |
 | `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
@@ -72,7 +73,8 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
-| **Browser / Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
+| **Browser (Webseiten lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/browse <URL> [Frage]` öffnet eine Seite in echtem Chromium (Playwright), Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/browser.md`](./docs/browser.md) |
+| **Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
 
 ---
 

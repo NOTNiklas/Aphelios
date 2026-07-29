@@ -94,8 +94,8 @@ Details in [`docs/security.md`](./docs/security.md).
 | **VoiceEngine** | ✅ real, optional (Alpha 1.3) | Piper-TTS + faster-whisper-STT lokal, `voice.speak`/`voice.transcribe` |
 | **VisionEngine** | ✅ real, erste Ausbaustufe (Alpha 1.4) | Screenshot + OCR + Claude Vision, alles über SecurityGate (`/sieh`, `/lies`, `/fehler`) |
 | **KnowledgeEngine** | ✅ real (Alpha 1.5) | RAG ausschließlich über den Obsidian-Vault, mit Quellenangabe (`/wissen`) |
+| **BrowserEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Playwright-gesteuertes Lesen von Webseiten, über SecurityGate (`/browse`) |
 | CodingEngine | 🔌 stub | Code schreiben/refactoren |
-| BrowserEngine | 🔌 stub | Browser-Steuerung |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und

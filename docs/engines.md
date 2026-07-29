@@ -340,3 +340,34 @@ System-Prompt (Hintergrundwissen, keine gezielte Anfrage);
 Quellen. `KnowledgeEngine` durchsucht **immer** gezielt den Vault und
 antwortet **ausschließlich** daraus – für den Fall „was habe ich mir dazu
 notiert?" statt beiläufigem Kontext.
+
+## Engines in Alpha 1.6 (erste Ausbaustufe: BrowserEngine)
+
+Alpha 1.6 „Developer & Office" umfasst laut `ROADMAP.md` vier Bausteine
+(CodingEngine, BrowserEngine, Office-Integration, VS-Code-Integration) – hier
+zunächst die **BrowserEngine**, die übrigen drei bleiben vorerst Stubs.
+
+### BrowserEngine (real, erste Ausbaustufe)
+Liest Webseiten über einen echten, Playwright-gesteuerten Chromium – Details,
+Einrichtung und Bus-Schnittstelle in [`docs/browser.md`](./browser.md).
+Kurzfassung:
+
+- `/browse <URL> [Frage]` – öffnet die Seite, extrahiert Titel + sichtbaren
+  Text; mit `ANTHROPIC_API_KEY` beantwortet Claude die Frage (bzw. fasst
+  zusammen) ausschließlich anhand dieses Inhalts, ohne Key gibt es nur den
+  rohen Seitentext.
+- Fehlt im ersten Wort der Anfrage eine erkennbare URL (Heuristik: enthält
+  einen Punkt, keine Leerzeichen), kommt eine klare Fehlermeldung statt
+  eines Rateversuchs – APHELIOS sucht nicht selbstständig im Web.
+- **Jede** Anfrage läuft über das SecurityGate (CONFIRM) – APHELIOS öffnet
+  dabei eine beliebige externe Seite und lädt deren Inhalt im Namen des
+  Nutzers.
+- Läuft nativ asynchron über Playwrights `async_api` (kein
+  `asyncio.to_thread` nötig, anders als bei den synchronen mss/pytesseract-
+  Aufrufen der `VisionEngine`).
+- Standardmäßig headless (unsichtbar); `APHELIOS_BROWSER_HEADLESS=false`
+  zeigt ein echtes Browser-Fenster auf dem Desktop (JARVIS-Effekt).
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Interaktion (Klicken,
+  Formulare, Login-Flows) – nur lesend, siehe `docs/browser.md` für die
+  Sicherheitsabwägung. Ebenso keine Websuche (Nutzer muss eine konkrete URL
+  angeben) und keine Cookie-/Session-Persistenz zwischen Aufrufen.

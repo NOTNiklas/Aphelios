@@ -35,13 +35,6 @@ class CodingEngine(_StubEngine):
     topic = "coding.request"
 
 
-class BrowserEngine(_StubEngine):
-    """Browser-Steuerung via Playwright. TODO: Roadmap Alpha 1.6."""
-
-    name = "browser"
-    topic = "browser.request"
-
-
 class AgentEngine(_StubEngine):
     """Orchestriert mehrere parallele AI-Agenten. TODO: Roadmap Beta."""
 

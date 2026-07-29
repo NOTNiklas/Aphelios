@@ -158,7 +158,12 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 ## Alpha 1.6 — Developer & Office
 
 - ⬜ CodingEngine (schreiben/refactoren, Git/GitHub, Docker, WSL)
-- ⬜ BrowserEngine (Playwright-Steuerung)
+- ✅ **BrowserEngine (Playwright-Steuerung)** – `/browse <URL> [Frage]`
+  öffnet eine Seite in einem echten Chromium und beantwortet Fragen dazu
+  (mit `ANTHROPIC_API_KEY`) bzw. liefert den rohen Seitentext (ohne Key);
+  jede Anfrage über SecurityGate bestätigungspflichtig. Bewusst NICHT:
+  Interaktion (Klicken, Formulare, Login-Flows) oder Websuche – siehe
+  `docs/browser.md`
 - ⬜ Office: Word/Excel/PowerPoint, PDF-Analyse
 - ⬜ VS Code / Claude Code Integration
 

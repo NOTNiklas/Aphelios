@@ -105,6 +105,14 @@ class Config:
     #: `.traineddata`-Sprachpaketen passen, siehe docs/vision.md.
     ocr_lang: str = "deu+eng"
 
+    # --- Browser (Alpha 1.6, optional: Playwright-gesteuertes Lesen von Seiten) ---
+    #: Standardmäßig unsichtbar (kein Browser-Fenster) – auf dem Windows-
+    #: Desktop kann ``APHELIOS_BROWSER_HEADLESS=false`` gesetzt werden, damit
+    #: der Nutzer sieht, wie APHELIOS die Seite öffnet (JARVIS-artiger
+    #: Effekt). ``headless=True`` bleibt der sichere Standard, u. a. für
+    #: Server-/CI-Umgebungen ohne Anzeige.
+    browser_headless: bool = True
+
     # --- API-Server ---
     api_host: str = "127.0.0.1"
     api_port: int = 8787
@@ -139,6 +147,7 @@ class Config:
             whisper_model=_get("APHELIOS_WHISPER_MODEL", "base"),
             whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),
             ocr_lang=_get("APHELIOS_OCR_LANG", "deu+eng"),
+            browser_headless=_get("APHELIOS_BROWSER_HEADLESS", "true").lower() not in ("false", "0", "no"),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),
