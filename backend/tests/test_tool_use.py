@@ -127,6 +127,19 @@ def test_read_document_without_question_has_no_trailing_space():
     )
 
 
+def test_send_email_maps_to_mail_send_request():
+    assert _tool_call_to_event(
+        "send_email", {"to": "max@example.com", "subject": "Update", "body": "Alles erledigt."}
+    ) == ("mail.send.request", {"text": "max@example.com | Update | Alles erledigt."})
+
+
+def test_create_calendar_event_maps_to_calendar_create_request():
+    assert _tool_call_to_event(
+        "create_calendar_event",
+        {"title": "Team-Meeting", "start": "2026-08-01 15:00", "duration_minutes": 60},
+    ) == ("calendar.create.request", {"text": "Team-Meeting | 2026-08-01 15:00 | 60"})
+
+
 def test_unknown_tool_name_returns_none():
     assert _tool_call_to_event("does_not_exist", {}) is None
 

@@ -475,3 +475,40 @@ Kurzfassung:
   neuer Dokumente (nur lesend), keine Excel-Formel-Berechnung (nur
   gespeicherte Werte), keine eingebetteten Bilder/Diagramme (nur Text) und
   keine alten Binärformate (`.doc`/`.xls`/`.ppt`) – siehe `docs/office.md`.
+
+## Engines in Alpha 1.7 (MailEngine/CalendarEngine: Schreibzugriff)
+
+### MailEngine – Mails senden (erweitert)
+Bisher rein lesend (ungelesene Gmail-Nachrichten abrufen), jetzt zusätzlich
+`/mail-senden <An> | <Betreff> | <Text>` (oder von Claude selbst über das
+Werkzeug `send_email`) – Details, Einrichtung (inkl. erneuter Anmeldung für
+vor Alpha 1.7 verbundene Nutzer) in
+[`docs/integrations.md`](./integrations.md#mails-senden--termine-anlegen-alpha-17).
+
+- Pipe-getrennte Felder statt Freitext-Erkennung – eine Mail hat drei
+  gleichwertig lange Felder ohne zuverlässigen natürlichsprachlichen Trenner.
+- **Jede** Sendeanfrage läuft über das SecurityGate (CONFIRM) – eine
+  gesendete Mail lässt sich nicht zurückholen.
+- Bewusst KEIN automatisches Verfassen durch Claude – der Nutzer gibt
+  An/Betreff/Text explizit an, APHELIOS erfindet keinen Mailinhalt
+  selbstständig (anders als z. B. `CodingEngine`, wo Claude Code aktiv
+  generiert – eine Mail hat aber reale Empfänger und Konsequenzen).
+- Erkennt fehlende Schreib-Scopes bei einem vor Alpha 1.7 erteilten Token
+  (`is_insufficient_scope_error()` in `aphelios/integrations/google_auth.py`)
+  und weist gezielt auf die erneute Anmeldung hin, statt nur die rohe
+  Google-Fehlermeldung zu zeigen.
+
+### CalendarEngine – Termine anlegen (erweitert)
+Bisher rein lesend (kommende Termine abrufen), jetzt zusätzlich
+`/termin-anlegen <Titel> | <Start JJJJ-MM-TT HH:MM> | <Dauer in Minuten>`
+(oder über das Werkzeug `create_calendar_event`).
+
+- Start-Zeitpunkt wird als **lokale Systemzeit** interpretiert (passend zum
+  Windows-Desktop, auf dem APHELIOS läuft).
+- **Jede** Anfrage läuft über das SecurityGate (CONFIRM) – ein Termin ist
+  für andere Kalender-Teilnehmer sichtbar und lässt sich nicht
+  rückstandslos zurücknehmen (Einladungen können schon verschickt sein).
+- Bewusst KEINE natürlichsprachliche Datumserkennung ("morgen um 15 Uhr")
+  – bräuchte eine eigene Sprachverarbeitung mit vielen Zeitzonen-/
+  Sonderfällen, für diese Ausbaustufe unverhältnismäßig.
+- Dieselbe Scope-Fehlerbehandlung wie `MailEngine` (siehe oben).

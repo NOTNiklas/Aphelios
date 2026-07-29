@@ -216,6 +216,8 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/sieh ": ("vision.request", "question", {"action": "describe"}),
     "/browse ": ("browser.request", "text", {}),
     "/dokument ": ("office.request", "text", {}),
+    "/mail-senden ": ("mail.send.request", "text", {}),
+    "/termin-anlegen ": ("calendar.create.request", "text", {}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
@@ -227,6 +229,8 @@ _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
     "/browse": ("browser.request", {"text": ""}),
     "/dokument": ("office.request", {"text": ""}),
     "/code-datei": ("coding.request", {"action": "write_file", "text": ""}),
+    "/mail-senden": ("mail.send.request", {"text": ""}),
+    "/termin-anlegen": ("calendar.create.request", {"text": ""}),
 }
 
 #: Einzige Quelle der Wahrheit für ``/help``/``/hilfe`` – bei jedem neuen
@@ -248,6 +252,8 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/fehler", "Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung"),
     ("/browse <URL> [Frage]", "Öffnet eine Seite (echter Browser) und beantwortet Fragen dazu – mit Bestätigung"),
     ("/dokument <Pfad> [Frage]", "Liest Word/Excel/PowerPoint/PDF und beantwortet Fragen dazu – mit Bestätigung"),
+    ("/mail-senden <An> | <Betreff> | <Text>", "Sendet eine Gmail-Mail – mit Bestätigung"),
+    ("/termin-anlegen <Titel> | <Start JJJJ-MM-TT HH:MM> | <Dauer in Min.>", "Legt einen Kalender-Termin an – mit Bestätigung"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 

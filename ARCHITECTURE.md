@@ -86,8 +86,8 @@ Details in [`docs/security.md`](./docs/security.md).
 | **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback), persistenter Kontext über MemoryEngine |
 | **MemoryEngine** | ✅ real (Vektorsuche seit Alpha 1.5) | Obsidian-Vault-Notizen mit automatischer Verlinkung; semantische Suche über ChromaDB mit automatischem Volltext-Fallback (Titel/Inhalt/Tags) + generischer KV-Store |
 | **WeatherEngine** | ✅ real | Echtes Wetter via Open-Meteo (kein API-Key) |
-| **MailEngine** | ✅ real, optional | Gmail lesen (eigener Google-OAuth-Client nötig) |
-| **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen (dieselbe Anmeldung) |
+| **MailEngine** | ✅ real, optional | Gmail lesen + senden (Alpha 1.7, `/mail-senden`), eigener Google-OAuth-Client nötig |
+| **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen + anlegen (Alpha 1.7, `/termin-anlegen`), dieselbe Anmeldung |
 | **ReasoningEngine** | ✅ real (Alpha 1.1) | Mehrstufige Analyse + sichtbare Werkzeug-Auswahl (`/denke`) |
 | **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
 | **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |

@@ -56,8 +56,8 @@ merkst dir seine Arbeitsweise und schlägst proaktiv Optimierungen vor.
 Du hast Zugriff auf Werkzeuge, mit denen du tatsächlich etwas auf dem PC \
 des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Code schreiben, \
 Programm öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, \
-Bildschirm ansehen/lesen, Webseite öffnen, Office-Dokument/PDF lesen). \
-Nutze ein Werkzeug NUR, wenn die Anfrage \
+Bildschirm ansehen/lesen, Webseite öffnen, Office-Dokument/PDF lesen, Mail \
+senden, Termin anlegen). Nutze ein Werkzeug NUR, wenn die Anfrage \
 eindeutig danach verlangt ("was hab ich mir zu X notiert" → Vault \
 durchsuchen, "öffne Spotify" → Programm öffnen) – bei normalem Geplauder \
 oder allgemeinen Fragen antwortest du direkt, ohne Werkzeug. Rufst du ein \
@@ -223,6 +223,39 @@ _TOOLS: list[dict] = [
             "required": ["path"],
         },
     },
+    {
+        "name": "send_email",
+        "description": (
+            "Sendet eine E-Mail über Gmail. Nur nutzen, wenn der Nutzer An, Betreff "
+            "und Inhalt (oder genug, um sie eindeutig zu formulieren) explizit "
+            "vorgibt – nie eine Mail mit erfundenem Inhalt senden."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "to": {"type": "string", "description": "Empfänger-Adresse."},
+                "subject": {"type": "string", "description": "Betreff."},
+                "body": {"type": "string", "description": "Mailtext."},
+            },
+            "required": ["to", "subject", "body"],
+        },
+    },
+    {
+        "name": "create_calendar_event",
+        "description": (
+            "Legt einen Termin im Google-Kalender des Nutzers an. Start-Zeitpunkt "
+            "muss als 'JJJJ-MM-TT HH:MM' angegeben werden (lokale Zeit)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Titel des Termins."},
+                "start": {"type": "string", "description": "Start als 'JJJJ-MM-TT HH:MM'."},
+                "duration_minutes": {"type": "integer", "description": "Dauer in Minuten."},
+            },
+            "required": ["title", "start", "duration_minutes"],
+        },
+    },
 ]
 
 
@@ -272,6 +305,16 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         path = tool_input.get("path", "")
         question = tool_input.get("question", "")
         return "office.request", {"text": f"{path} {question}".strip()}
+    if name == "send_email":
+        to = tool_input.get("to", "")
+        subject = tool_input.get("subject", "")
+        body = tool_input.get("body", "")
+        return "mail.send.request", {"text": f"{to} | {subject} | {body}"}
+    if name == "create_calendar_event":
+        title = tool_input.get("title", "")
+        start = tool_input.get("start", "")
+        duration = tool_input.get("duration_minutes", "")
+        return "calendar.create.request", {"text": f"{title} | {start} | {duration}"}
     return None
 
 

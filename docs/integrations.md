@@ -32,8 +32,11 @@ Kein weiterer Schritt nötig – die `WeatherEngine` startet automatisch mit.
 ## Gmail & Kalender einrichten
 
 Beide nutzen **eine gemeinsame** Google-Anmeldung (ein Consent-Vorgang deckt
-Mail-Lesen + Kalender-Lesen ab). Rein lesend – APHELIOS legt keine Termine an
-und verschickt keine Mails ohne separate, spätere Freigabe.
+alle Scopes ab). Seit Alpha 1.7 auch **schreibend**: `/mail-senden` und
+`/termin-anlegen` (siehe `docs/engines.md`) – beide immer über das
+SecurityGate bestätigungspflichtig (`docs/security.md`), APHELIOS sendet
+nie eine Mail oder legt nie einen Termin an ohne explizite Bestätigung mit
+sichtbarem Inhalt.
 
 ### 1 · Google-Cloud-Projekt anlegen
 
@@ -83,6 +86,36 @@ verankert – unabhängig davon, aus welchem Arbeitsverzeichnis `python -m
 aphelios` bzw. `run.bat` tatsächlich gestartet wird. Ein absoluter Pfad in
 der `.env` (z. B. `C:\Users\<Name>\Aphelios\backend\data\google_token.json`)
 funktioniert wie gehabt unverändert.
+
+> **Bereits vor Alpha 1.7 angemeldet?** Das gespeicherte Token kennt dann nur
+> die alten, rein lesenden Scopes – `/mail-senden`/`/termin-anlegen`
+> schlagen mit einem Berechtigungsfehler fehl (die Fehlermeldung weist
+> darauf explizit hin). Einmalig erneut ausführen:
+> `python scripts/google_auth.py` (Schritt 3 oben) – ein neuer
+> Consent-Bildschirm fragt dann zusätzlich nach den Schreib-Berechtigungen
+> ("Mails senden", "Termine verwalten"), die Token-Datei wird dabei überschrieben.
+
+### Mails senden & Termine anlegen (Alpha 1.7)
+
+```
+/mail-senden max@example.com | Update | Das Projekt ist fertig.
+/termin-anlegen Team-Meeting | 2026-08-01 15:00 | 60
+```
+
+Beide Befehle erwarten ihre Felder **Pipe-getrennt** (`|`) – bewusst keine
+Freitext-Erkennung wie bei URLs/Dateipfaden in Browser-/OfficeEngine: eine
+Mail hat drei gleichwertig lange Freitextfelder ohne zuverlässigen
+natürlichsprachlichen Trenner, und ein Datum ("morgen um 15 Uhr") bräuchte
+eine eigene Sprachverarbeitung mit vielen Zeitzonen-/Sonderfällen. Der
+Start-Zeitpunkt für Termine ist `JJJJ-MM-TT HH:MM` in **lokaler Systemzeit**.
+
+Claude kann beide Aktionen auch selbst über die Tool-Use-API auslösen (z. B.
+"schreib eine Mail an max@example.com, dass ich später komme") – siehe
+`docs/engines.md`, Abschnitt „ConversationEngine – Werkzeug-Nutzung". In
+beiden Fällen (Slash-Befehl oder KI-Auswahl) zeigt APHELIOS **immer** eine
+Bestätigung mit dem vollständigen Inhalt, bevor etwas gesendet/angelegt wird
+– eine gesendete Mail lässt sich nicht zurückholen, ein Termin ist für
+andere Teilnehmer sichtbar.
 
 ---
 

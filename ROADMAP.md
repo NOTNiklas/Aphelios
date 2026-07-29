@@ -206,9 +206,16 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 - ⬜ WhatsApp – bewusst noch ohne Code (offizielle Business-API ist für
   Unternehmen gedacht, inoffizielle Wege verletzen die Nutzungsbedingungen);
   Entscheidung liegt beim Nutzer, siehe `docs/integrations.md`
-- ⬜ Schreibzugriff (Termine anlegen, Mails senden) – über SecurityGate
-  bestätigungspflichtig
-- ⬜ Discord, Steam, weitere Musik-Dienste
+- ✅ **Schreibzugriff (Termine anlegen, Mails senden)** – `/mail-senden <An>
+  | <Betreff> | <Text>` und `/termin-anlegen <Titel> | <Start> | <Dauer in
+  Min.>` (auch über Claude Tool-Use auslösbar), beide immer über
+  SecurityGate bestätigungspflichtig – siehe `docs/integrations.md`,
+  `docs/engines.md`. Erweiterte Google-Scopes (`gmail.send`,
+  `calendar.events`) – vor Alpha 1.7 angemeldete Nutzer müssen
+  `python scripts/google_auth.py` einmalig erneut ausführen.
+- ⬜ Discord, Steam, weitere Musik-Dienste – wie WhatsApp: brauchen jeweils
+  eigene Entwickler-Zugangsdaten/OAuth-Einrichtung, die der Nutzer selbst
+  anlegen müsste; Entscheidung, ob/welcher Dienst zuerst, liegt beim Nutzer
 
 ---
 

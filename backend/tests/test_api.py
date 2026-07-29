@@ -158,6 +158,50 @@ async def test_code_datei_without_argument_routes_with_empty_text():
     assert received[0].data == {"action": "write_file", "text": "", "id": "x2e"}
 
 
+async def test_mail_senden_slash_command_routes_to_mail_send_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("mail.send.request", lambda e: received.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "m1", "text": "/mail-senden max@example.com | Betreff | Text"}
+    )
+
+    assert received[0].data == {"text": "max@example.com | Betreff | Text", "id": "m1"}
+
+
+async def test_mail_senden_without_argument_routes_with_empty_text():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("mail.send.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "m2", "text": "/mail-senden"})
+
+    assert received[0].data == {"text": "", "id": "m2"}
+
+
+async def test_termin_anlegen_slash_command_routes_to_calendar_create_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("calendar.create.request", lambda e: received.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "c1", "text": "/termin-anlegen Meeting | 2026-08-01 15:00 | 60"}
+    )
+
+    assert received[0].data == {"text": "Meeting | 2026-08-01 15:00 | 60", "id": "c1"}
+
+
+async def test_termin_anlegen_without_argument_routes_with_empty_text():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("calendar.create.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "c2", "text": "/termin-anlegen"})
+
+    assert received[0].data == {"text": "", "id": "c2"}
+
+
 async def test_plan_step_complete_message_routes_correctly():
     bus = EventBus()
     received: list[Event] = []
@@ -357,6 +401,8 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "vision.request",
         "browser.request",
         "office.request",
+        "mail.send.request",
+        "calendar.create.request",
     ):
         bus.subscribe(topic, lambda e: engine_events.append(e))
 
@@ -386,6 +432,8 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "/fehler",
         "/browse",
         "/dokument",
+        "/mail-senden",
+        "/termin-anlegen",
     ):
         assert command in full_text
 
