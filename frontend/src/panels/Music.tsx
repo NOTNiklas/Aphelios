@@ -9,6 +9,7 @@
  * aber ins Iron-Man-HUD-Farbschema (Neon-Grün, Glassmorphism) übersetzt.
  */
 import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Panel } from "../hud/Panel";
 import { MOCK_MUSIC } from "../lib/mock";
 import { useBackend } from "../lib/ws";
@@ -76,6 +77,59 @@ function NoteIcon() {
       <path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
     </svg>
   );
+}
+
+/** Lässt den Fortschritt zwischen den Backend-Updates (alle paar Sekunden,
+ * siehe MusicEngine-Poll-Intervall) lokal weiterlaufen statt nur alle paar
+ * Sekunden sichtbar zu springen – tickt alle 250ms neu gegen die seit dem
+ * letzten Update vergangene Wall-Clock-Zeit, ohne eigene Server-Anfragen. */
+function useSmoothProgress(
+  anchorMs: number | null | undefined,
+  anchorAtSec: number | null | undefined,
+  isPlaying: boolean,
+  durationMs: number | null | undefined,
+): number | null | undefined {
+  const [, forceTick] = useState(0);
+
+  useEffect(() => {
+    if (!isPlaying || anchorMs == null || anchorAtSec == null) return;
+    const id = setInterval(() => forceTick((t) => t + 1), 250);
+    return () => clearInterval(id);
+  }, [isPlaying, anchorMs, anchorAtSec]);
+
+  if (anchorMs == null || !isPlaying || anchorAtSec == null) return anchorMs;
+  const elapsed = Math.max(0, Date.now() - anchorAtSec * 1000);
+  const projected = anchorMs + elapsed;
+  return durationMs != null ? Math.min(projected, durationMs) : projected;
+}
+
+/** Sofortiges lokales Feedback beim Ziehen, statt direkt an den
+ * Server-Wert gebunden zu sein (der erst nach Netzwerk-Roundtrip
+ * nachkommt und den Regler sonst "zurückspringen" lässt). Sendet erst
+ * ``debounceMs`` nach der letzten Änderung – sonst würde jeder
+ * Zwischenschritt beim Ziehen einen eigenen Spotify-Aufruf auslösen. */
+function useVolumeDraft(
+  serverValue: number,
+  send: (value: number) => void,
+  debounceMs = 300,
+): [number, (value: number) => void] {
+  const [draft, setDraft] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (draft != null && draft === serverValue) setDraft(null);
+  }, [serverValue, draft]);
+
+  function onChange(value: number) {
+    setDraft(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      send(value);
+      timerRef.current = null;
+    }, debounceMs);
+  }
+
+  return [draft ?? serverValue, onChange];
 }
 
 interface CircleButtonProps {
@@ -147,7 +201,7 @@ function AlbumRing({
           transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
           initial={false}
           animate={{ strokeDashoffset: dashOffset }}
-          transition={reduce ? { duration: 0 } : { duration: 0.4, ease: "easeOut" }}
+          transition={reduce ? { duration: 0 } : { duration: 0.25, ease: "linear" }}
         />
       </svg>
       <div
@@ -176,6 +230,27 @@ export function Music() {
   const music = useHud((s) => s.music);
   const { musicPlay, musicPause, musicNext, musicPrevious, musicLike, musicVolume } = useBackend();
 
+  // Abgeleitete Werte + Hooks IMMER unbedingt aufrufen (Rules of Hooks) –
+  // erst danach je nach Zustand (Fehler/Idle/normal) verzweigen, welches
+  // JSX zurückgegeben wird.
+  const isPreview = !music?.track;
+  const track = music?.track ?? MOCK_MUSIC.track;
+  const artist = music?.artist ?? MOCK_MUSIC.artist;
+  const albumArt = music?.album_art ?? null;
+  const isPlaying = isPreview ? MOCK_MUSIC.is_playing : Boolean(music?.is_playing);
+  const rawProgressMs = isPreview ? MOCK_MUSIC.progress_ms : music?.progress_ms;
+  const durationMs = isPreview ? MOCK_MUSIC.duration_ms : music?.duration_ms;
+  const liked = Boolean(music?.liked);
+  const serverVolume = music?.volume ?? 70;
+
+  const progressMs = useSmoothProgress(
+    rawProgressMs,
+    isPreview ? null : music?.updated_at,
+    isPlaying,
+    durationMs,
+  );
+  const [displayVolume, handleVolumeChange] = useVolumeDraft(serverVolume, musicVolume);
+
   if (music?.error) {
     return (
       <Panel title="Musik" delay={0.02}>
@@ -194,16 +269,6 @@ export function Music() {
       </Panel>
     );
   }
-
-  const isPreview = !music?.track;
-  const track = music?.track ?? MOCK_MUSIC.track;
-  const artist = music?.artist ?? MOCK_MUSIC.artist;
-  const albumArt = music?.album_art ?? null;
-  const isPlaying = isPreview ? MOCK_MUSIC.is_playing : Boolean(music?.is_playing);
-  const progressMs = isPreview ? MOCK_MUSIC.progress_ms : music?.progress_ms;
-  const durationMs = isPreview ? MOCK_MUSIC.duration_ms : music?.duration_ms;
-  const liked = Boolean(music?.liked);
-  const volume = music?.volume ?? 70;
 
   return (
     <Panel title="Musik" delay={0.02}>
@@ -240,10 +305,10 @@ export function Music() {
           type="range"
           min={0}
           max={100}
-          value={volume}
-          onChange={(e) => musicVolume(Number(e.target.value))}
+          value={displayVolume}
+          onChange={(e) => handleVolumeChange(Number(e.target.value))}
           className="h-1 w-full max-w-[200px] accent-hud-neon"
-          title={`Lautstärke: ${volume}%`}
+          title={`Lautstärke: ${displayVolume}%`}
         />
 
         {isPreview && <PreviewHint>Vorschau — Spotify via docs/integrations.md verbinden</PreviewHint>}
