@@ -96,6 +96,7 @@ Details in [`docs/security.md`](./docs/security.md).
 | **KnowledgeEngine** | ✅ real (Alpha 1.5) | RAG ausschließlich über den Obsidian-Vault, mit Quellenangabe (`/wissen`) |
 | **BrowserEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Playwright-gesteuertes Lesen von Webseiten, über SecurityGate (`/browse`) |
 | **CodingEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Code schreiben/erklären über Claude, nur im Chat (`/code`) |
+| **OfficeEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Word/Excel/PowerPoint/PDF lesen, über SecurityGate (`/dokument`) |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und

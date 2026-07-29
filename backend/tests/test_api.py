@@ -289,6 +289,29 @@ async def test_browse_without_argument_routes_to_browser_request_with_empty_text
     assert received[0].data == {"text": "", "id": "b2"}
 
 
+# -- Chat-Nachrichten-Routing (Alpha 1.6: OfficeEngine) -----------------------
+async def test_dokument_with_path_and_question_routes_to_office_request():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("office.request", lambda e: received.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "o1", "text": "/dokument bericht.docx Was ist das Fazit?"}
+    )
+
+    assert received[0].data == {"text": "bericht.docx Was ist das Fazit?", "id": "o1"}
+
+
+async def test_dokument_without_argument_routes_to_office_request_with_empty_text():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("office.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "o2", "text": "/dokument"})
+
+    assert received[0].data == {"text": "", "id": "o2"}
+
+
 # -- Chat-Nachrichten-Routing (/help, /hilfe) ---------------------------------
 async def test_help_command_lists_every_slash_command_without_hitting_an_engine():
     bus = EventBus()
@@ -306,6 +329,7 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "automation.request",
         "vision.request",
         "browser.request",
+        "office.request",
     ):
         bus.subscribe(topic, lambda e: engine_events.append(e))
 
@@ -333,6 +357,7 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "/lies",
         "/fehler",
         "/browse",
+        "/dokument",
     ):
         assert command in full_text
 

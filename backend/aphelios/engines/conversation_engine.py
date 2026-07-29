@@ -56,7 +56,8 @@ merkst dir seine Arbeitsweise und schlägst proaktiv Optimierungen vor.
 Du hast Zugriff auf Werkzeuge, mit denen du tatsächlich etwas auf dem PC \
 des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Code schreiben, \
 Programm öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, \
-Bildschirm ansehen/lesen, Webseite öffnen). Nutze ein Werkzeug NUR, wenn die Anfrage \
+Bildschirm ansehen/lesen, Webseite öffnen, Office-Dokument/PDF lesen). \
+Nutze ein Werkzeug NUR, wenn die Anfrage \
 eindeutig danach verlangt ("was hab ich mir zu X notiert" → Vault \
 durchsuchen, "öffne Spotify" → Programm öffnen) – bei normalem Geplauder \
 oder allgemeinen Fragen antwortest du direkt, ohne Werkzeug. Rufst du ein \
@@ -189,6 +190,22 @@ _TOOLS: list[dict] = [
             "required": ["url"],
         },
     },
+    {
+        "name": "read_document",
+        "description": (
+            "Liest ein Word- (.docx), Excel- (.xlsx), PowerPoint- (.pptx) oder "
+            "PDF-Dokument von der Platte des Nutzers und beantwortet eine Frage zu "
+            "seinem Inhalt bzw. fasst es zusammen."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Voller Pfad zur Datei."},
+                "question": {"type": "string", "description": "Optionale Frage zum Dokument."},
+            },
+            "required": ["path"],
+        },
+    },
 ]
 
 
@@ -226,6 +243,10 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         url = tool_input.get("url", "")
         question = tool_input.get("question", "")
         return "browser.request", {"text": f"{url} {question}".strip()}
+    if name == "read_document":
+        path = tool_input.get("path", "")
+        question = tool_input.get("question", "")
+        return "office.request", {"text": f"{path} {question}".strip()}
     return None
 
 

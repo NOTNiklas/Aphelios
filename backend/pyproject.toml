@@ -50,6 +50,9 @@ vision = ["mss>=9.0", "pytesseract>=0.3", "Pillow>=10.0"]
 # "playwright install chromium" (lädt den Browser selbst, kein pip-Paket),
 # siehe docs/browser.md.
 browser = ["playwright>=1.40"]
+# Lesendes Öffnen von Office-Dokumenten/PDFs (OfficeEngine, Alpha 1.6): Word
+# (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF – siehe docs/office.md.
+office = ["python-docx>=1.0", "openpyxl>=3.1", "python-pptx>=0.6", "pypdf>=4.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
 
 [project.scripts]

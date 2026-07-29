@@ -341,13 +341,13 @@ Quellen. `KnowledgeEngine` durchsucht **immer** gezielt den Vault und
 antwortet **ausschließlich** daraus – für den Fall „was habe ich mir dazu
 notiert?" statt beiläufigem Kontext.
 
-## Engines in Alpha 1.6 (erste Ausbaustufe: BrowserEngine, Werkzeug-Nutzung)
+## Engines in Alpha 1.6 (BrowserEngine, CodingEngine, OfficeEngine, Werkzeug-Nutzung)
 
-Alpha 1.6 „Developer & Office" umfasst laut `ROADMAP.md` vier Bausteine
-(CodingEngine, BrowserEngine, Office-Integration, VS-Code-Integration) – hier
-zunächst die **BrowserEngine**, die übrigen drei bleiben vorerst Stubs.
-Zusätzlich kann Claude jetzt selbst über Claudes **Tool-Use-API** entscheiden,
-ob eine normale Chat-Nachricht ein Werkzeug braucht (siehe unten).
+Alpha 1.6 „Developer & Office" umfasst laut `ROADMAP.md` vier Bausteine:
+CodingEngine, BrowserEngine, Office-Integration (alle drei unten) und
+VS-Code-Integration (separat abgestimmt, siehe `ROADMAP.md`). Zusätzlich kann
+Claude jetzt selbst über Claudes **Tool-Use-API** entscheiden, ob eine
+normale Chat-Nachricht ein Werkzeug braucht (siehe unten).
 
 ### ConversationEngine – Werkzeug-Nutzung (erweitert)
 Bisher lösten Werkzeuge NUR explizite Slash-Befehle aus (`/wissen`, `/oeffne`
@@ -434,3 +434,27 @@ Markdown-Codeblöcken + kurze Erklärung), gestreamt wie `/denke`.
   Kommandozeilenbefehle, die `/run` (`AutomationEngine`) bereits abdeckt
   (z. B. `/run git status`, `/run docker ps`, `/run wsl -l`); eine zweite,
   redundante Ausführungsschiene nur dafür wäre unnötiger Mehraufwand.
+
+### OfficeEngine (real, erste Ausbaustufe)
+Liest Word-/Excel-/PowerPoint-Dokumente und PDFs von der Platte – Details,
+Einrichtung und Bus-Schnittstelle in [`docs/office.md`](./office.md).
+Kurzfassung:
+
+- `/dokument <Pfad> [Frage]` (oder von Claude selbst über das Werkzeug
+  `read_document`, siehe oben) – extrahiert Text (Excel: Zellen je
+  Tabellenblatt, PowerPoint: Text je Folie); mit `ANTHROPIC_API_KEY`
+  beantwortet Claude die Frage (bzw. fasst zusammen) ausschließlich anhand
+  dieses Inhalts, ohne Key gibt es nur den rohen Text.
+- Pfad-Erkennung per Datei-Endung (`.docx`/`.xlsx`/`.pptx`/`.pdf`) statt per
+  Leerzeichen-Split – Windows-Pfade enthalten oft Leerzeichen (z. B.
+  `C:\Users\User\Meine Dokumente\Bericht.docx`).
+- **Jede** Anfrage läuft über das SecurityGate (CONFIRM) – dieselbe
+  Abwägung wie bei `VisionEngine`/`BrowserEngine`: der Dateiinhalt kann
+  beliebig sensibel sein und geht (mit API-Key) an die Claude-API.
+- Extraktion läuft blockierend in einem Thread (`asyncio.to_thread`) –
+  python-docx/openpyxl/python-pptx/pypdf sind synchrone Bibliotheken, genau
+  wie mss/pytesseract bei der `VisionEngine`.
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Kein Erstellen/Schreiben
+  neuer Dokumente (nur lesend), keine Excel-Formel-Berechnung (nur
+  gespeicherte Werte), keine eingebetteten Bilder/Diagramme (nur Text) und
+  keine alten Binärformate (`.doc`/`.xls`/`.ppt`) – siehe `docs/office.md`.

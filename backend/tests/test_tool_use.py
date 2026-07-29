@@ -104,6 +104,20 @@ def test_browse_page_without_question_has_no_trailing_space():
     )
 
 
+def test_read_document_combines_path_and_question():
+    assert _tool_call_to_event("read_document", {"path": "bericht.docx", "question": "Fazit?"}) == (
+        "office.request",
+        {"text": "bericht.docx Fazit?"},
+    )
+
+
+def test_read_document_without_question_has_no_trailing_space():
+    assert _tool_call_to_event("read_document", {"path": "bericht.docx"}) == (
+        "office.request",
+        {"text": "bericht.docx"},
+    )
+
+
 def test_unknown_tool_name_returns_none():
     assert _tool_call_to_event("does_not_exist", {}) is None
 

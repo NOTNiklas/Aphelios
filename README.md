@@ -45,6 +45,7 @@ separate UI nötig):
 | `/lies` | Liest den sichtbaren Bildschirmtext (lokales OCR) – mit Bestätigung |
 | `/fehler` | Sucht eine sichtbare Fehlermeldung und erklärt sie – mit Bestätigung |
 | `/browse <URL> [Frage]` | Öffnet eine Seite (echter Browser) und beantwortet Fragen dazu – mit Bestätigung |
+| `/dokument <Pfad> [Frage]` | Liest Word/Excel/PowerPoint/PDF und beantwortet Fragen dazu – mit Bestätigung |
 | `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
@@ -76,6 +77,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
 | **Browser (Webseiten lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/browse <URL> [Frage]` öffnet eine Seite in echtem Chromium (Playwright), Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/browser.md`](./docs/browser.md) |
 | **Coding (Code schreiben/erklären)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/code <Anfrage>` – vollständiger, lauffähiger Code + kurze Erklärung, nur im Chat (kein Datei-Zugriff); Git/Docker/WSL laufen bereits über `/run` |
+| **Office (Dokumente lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/dokument <Pfad> [Frage]` liest Word/Excel/PowerPoint/PDF, Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/office.md`](./docs/office.md) |
 
 ---
 

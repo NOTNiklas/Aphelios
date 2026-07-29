@@ -169,7 +169,14 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   jede Anfrage über SecurityGate bestätigungspflichtig. Bewusst NICHT:
   Interaktion (Klicken, Formulare, Login-Flows) oder Websuche – siehe
   `docs/browser.md`
-- ⬜ Office: Word/Excel/PowerPoint, PDF-Analyse
+- ✅ **Office: Word/Excel/PowerPoint, PDF-Analyse** – `/dokument <Pfad>
+  [Frage]` extrahiert Text (Word, Excel je Tabellenblatt, PowerPoint je
+  Folie, PDF) und lässt Claude die Frage dazu beantworten (mit
+  `ANTHROPIC_API_KEY`) bzw. liefert den rohen Text (ohne Key); jede
+  Anfrage über SecurityGate bestätigungspflichtig. Bewusst NICHT:
+  Dokumente erstellen/schreiben, Excel-Formeln neu berechnen, eingebettete
+  Bilder/Diagramme, alte Binärformate (.doc/.xls/.ppt) – siehe
+  `docs/office.md`
 - ⬜ VS Code / Claude Code Integration
 - ✅ **KI-gesteuerte Werkzeug-Auswahl (Claude Tool-Use)** – nicht im
   ursprünglichen Alpha-1.6-Umfang, aber eng verwandt: die
