@@ -54,9 +54,9 @@ Antworte auf Deutsch, kurz und klar. Du kennst die Projekte des Nutzers, \
 merkst dir seine Arbeitsweise und schlägst proaktiv Optimierungen vor.
 
 Du hast Zugriff auf Werkzeuge, mit denen du tatsächlich etwas auf dem PC \
-des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Programm \
-öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, Bildschirm \
-ansehen/lesen, Webseite öffnen). Nutze ein Werkzeug NUR, wenn die Anfrage \
+des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Code schreiben, \
+Programm öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, \
+Bildschirm ansehen/lesen, Webseite öffnen). Nutze ein Werkzeug NUR, wenn die Anfrage \
 eindeutig danach verlangt ("was hab ich mir zu X notiert" → Vault \
 durchsuchen, "öffne Spotify" → Programm öffnen) – bei normalem Geplauder \
 oder allgemeinen Fragen antwortest du direkt, ohne Werkzeug. Rufst du ein \
@@ -98,6 +98,20 @@ _TOOLS: list[dict] = [
             "type": "object",
             "properties": {"task": {"type": "string", "description": "Die zu planende Aufgabe."}},
             "required": ["task"],
+        },
+    },
+    {
+        "name": "write_code",
+        "description": (
+            "Schreibt, erklärt oder überarbeitet Code (nur als Antwort im Chat, "
+            "kein Datei-Zugriff). Nutzen bei konkreten Programmier-Anfragen, z. B. "
+            "'schreib mir ein Python-Skript, das X macht' oder 'wie fixe ich diesen "
+            "Fehler', NICHT für allgemeine technische Fragen ohne Code-Bezug."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"request": {"type": "string", "description": "Die Programmier-Anfrage."}},
+            "required": ["request"],
         },
     },
     {
@@ -190,6 +204,8 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         return "knowledge.request", {"text": tool_input.get("query", "")}
     if name == "create_plan":
         return "plan.request", {"task": tool_input.get("task", "")}
+    if name == "write_code":
+        return "coding.request", {"text": tool_input.get("request", "")}
     if name == "run_powershell":
         return "automation.request", {"action": "run_powershell", "command": tool_input.get("command", "")}
     if name == "open_app":

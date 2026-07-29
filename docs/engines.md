@@ -415,3 +415,22 @@ Kurzfassung:
   Formulare, Login-Flows) – nur lesend, siehe `docs/browser.md` für die
   Sicherheitsabwägung. Ebenso keine Websuche (Nutzer muss eine konkrete URL
   angeben) und keine Cookie-/Session-Persistenz zwischen Aufrufen.
+
+### CodingEngine (real, erste Ausbaustufe)
+Ausgelöst über `/code <Anfrage>` (oder von Claude selbst über das Werkzeug
+`write_code`, siehe oben) – schreibt/erklärt Code über Claude mit einem
+dedizierten Coding-Persona (vollständiger, lauffähiger Code in
+Markdown-Codeblöcken + kurze Erklärung), gestreamt wie `/denke`.
+
+- Ohne `ANTHROPIC_API_KEY`: ehrliche Absage statt eines Fallback-Rateversuchs
+  – anders als z. B. `PlanningEngine` (Satzgrenzen-Heuristik ohne Claude)
+  ergibt "Code ohne LLM" keinen sinnvollen Ersatz.
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Kein Datei-Lesen/-Schreiben
+  – Code entsteht nur im Chat. Beides bräuchte eine sorgfältig durchdachte
+  SecurityGate-Bestätigung (Lesen: Dateiinhalt könnte sensible Daten
+  enthalten UND ginge an die Claude-API; Schreiben: beliebige Datei
+  überschreiben) – eine spätere Ausbaustufe.
+- **Bewusst NICHT als eigener Befehl:** Git/Docker/WSL – das sind normale
+  Kommandozeilenbefehle, die `/run` (`AutomationEngine`) bereits abdeckt
+  (z. B. `/run git status`, `/run docker ps`, `/run wsl -l`); eine zweite,
+  redundante Ausführungsschiene nur dafür wäre unnötiger Mehraufwand.

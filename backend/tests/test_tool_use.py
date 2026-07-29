@@ -47,6 +47,13 @@ def test_create_plan_maps_to_plan_request():
     )
 
 
+def test_write_code_maps_to_coding_request():
+    assert _tool_call_to_event("write_code", {"request": "Fibonacci-Funktion"}) == (
+        "coding.request",
+        {"text": "Fibonacci-Funktion"},
+    )
+
+
 def test_open_app_maps_to_automation_request():
     assert _tool_call_to_event("open_app", {"name": "Spotify"}) == (
         "automation.request",

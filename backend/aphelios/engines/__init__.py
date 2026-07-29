@@ -3,16 +3,14 @@
 from aphelios.engines.automation_engine import AutomationEngine
 from aphelios.engines.browser_engine import BrowserEngine
 from aphelios.engines.calendar_engine import CalendarEngine
+from aphelios.engines.coding_engine import CodingEngine
 from aphelios.engines.conversation_engine import ConversationEngine
 from aphelios.engines.mail_engine import MailEngine
 from aphelios.engines.memory_engine import MemoryEngine
 from aphelios.engines.planning_engine import PlanningEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.knowledge_engine import KnowledgeEngine
-from aphelios.engines.stubs import (
-    AgentEngine,
-    CodingEngine,
-)
+from aphelios.engines.stubs import AgentEngine
 from aphelios.engines.system_engine import SystemEngine
 from aphelios.engines.vision_engine import VisionEngine
 from aphelios.engines.voice_engine import VoiceEngine

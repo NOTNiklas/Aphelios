@@ -28,13 +28,6 @@ class _StubEngine(BaseEngine):
         self.log.info("[stub] %s empfing %r (noch nicht implementiert)", self.name, event.topic)
 
 
-class CodingEngine(_StubEngine):
-    """Code schreiben, refactoren, Git/GitHub, Docker, WSL. TODO: Roadmap Alpha 1.6."""
-
-    name = "coding"
-    topic = "coding.request"
-
-
 class AgentEngine(_StubEngine):
     """Orchestriert mehrere parallele AI-Agenten. TODO: Roadmap Beta."""
 

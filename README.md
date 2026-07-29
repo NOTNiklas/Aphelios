@@ -36,6 +36,7 @@ separate UI nötig):
 | `/plan <Aufgabe>` | Zerlegt eine Aufgabe in Schritte – echt im „Aufgaben"-Panel, abhakbar |
 | `/denke <Frage>` | Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort) |
 | `/wissen <Frage>` | Beantwortet NUR auf Basis des Obsidian-Vaults (RAG, mit Quellenangabe) |
+| `/code <Anfrage>` | Schreibt/erklärt Code (nur im Chat, kein Datei-Zugriff) |
 | `/run <PowerShell-Befehl>` | Führt einen Befehl aus – **immer mit Bestätigungsdialog** |
 | `/oeffne <Programm>` / `/schliesse <Programm>` | Startet/beendet ein Programm – mit Bestätigung |
 | `/loesche <Pfad>` | Löscht eine Datei/einen Ordner – mit Bestätigung |
@@ -74,7 +75,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
 | **Browser (Webseiten lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/browse <URL> [Frage]` öffnet eine Seite in echtem Chromium (Playwright), Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/browser.md`](./docs/browser.md) |
-| **Coding …** | 🔌 Stub | Schnittstellen vorbereitet, Implementierung folgt (siehe Roadmap) |
+| **Coding (Code schreiben/erklären)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/code <Anfrage>` – vollständiger, lauffähiger Code + kurze Erklärung, nur im Chat (kein Datei-Zugriff); Git/Docker/WSL laufen bereits über `/run` |
 
 ---
 
@@ -97,7 +98,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 │   │ System   │Conversation│ Memory │ Weather  │ Mail/Kalender│ │
 │   │ (psutil) │(Claude API)│(Obsidian)│(Open-Meteo)│ (Google, opt.)│
 │   └──────────┴────────────┴────────┴──────────┴─────────────┘ │
-│      Vision · Automation · Voice (real) · Browser · Coding … (Stubs) │
+│  Vision · Automation · Voice · Browser · Coding (real) · Agent (Stub) │
 │                                                                │
 │   SecurityGate  ·  PluginLoader  ·  Config                     │
 └────────────────────────────────────────────────────────────---┘

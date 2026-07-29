@@ -157,7 +157,12 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 
 ## Alpha 1.6 — Developer & Office
 
-- ⬜ CodingEngine (schreiben/refactoren, Git/GitHub, Docker, WSL)
+- ✅ **CodingEngine (schreiben/erklären)** – `/code <Anfrage>` liefert
+  vollständigen, lauffähigen Code + kurze Erklärung über Claude, nur im
+  Chat. Bewusst NICHT: Datei-Lesen/-Schreiben (bräuchte eine sorgfältig
+  durchdachte SecurityGate-Bestätigung, spätere Ausbaustufe) und kein
+  dediziertes Git/Docker/WSL-Kommando (deckt `/run` bereits ab) – siehe
+  `docs/engines.md`
 - ✅ **BrowserEngine (Playwright-Steuerung)** – `/browse <URL> [Frage]`
   öffnet eine Seite in einem echten Chromium und beantwortet Fragen dazu
   (mit `ANTHROPIC_API_KEY`) bzw. liefert den rohen Seitentext (ohne Key);
