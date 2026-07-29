@@ -68,6 +68,19 @@ def load_credentials(config: Config) -> "Credentials":
     return creds
 
 
+def is_invalid_scope_error(exc: Exception) -> bool:
+    """Erkennt Googles ``invalid_scope``-Fehler BEIM TOKEN-REFRESH (anders als
+    ``is_insufficient_scope_error`` unten, die einen 403 bei einer konkreten
+    API-Anfrage erkennt). Tritt auf, wenn das gespeicherte Token mit älteren,
+    engeren Scopes erteilt wurde als aktuell in ``GOOGLE_SCOPES`` angefordert
+    (z. B. vor Alpha 1.7, das ``gmail.send``/``calendar.events`` hinzufügte) –
+    ``load_credentials()`` erzwingt beim Laden immer die aktuellen Scopes,
+    ein Refresh kann aber keine neuen Scopes nachfordern. Betrifft dadurch
+    JEDEN Verbindungsaufbau (nicht nur Schreibversuche) und braucht daher
+    eine eigene, frühere Erkennung."""
+    return "invalid_scope" in str(exc).lower()
+
+
 def is_insufficient_scope_error(exc: Exception) -> bool:
     """Grobe Heuristik, ob ``exc`` Googles 403-Fehler für fehlende Scopes ist.
 

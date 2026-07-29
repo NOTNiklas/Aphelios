@@ -41,7 +41,11 @@ from typing import Any
 from aphelios.core.engine import BaseEngine
 from aphelios.core.event_bus import Event
 from aphelios.core.security import RiskLevel
-from aphelios.integrations.google_auth import is_insufficient_scope_error, load_credentials
+from aphelios.integrations.google_auth import (
+    is_insufficient_scope_error,
+    is_invalid_scope_error,
+    load_credentials,
+)
 
 
 def _parse_send_request(text: str) -> tuple[str, str, str] | None:
@@ -78,8 +82,16 @@ class MailEngine(BaseEngine):
         try:
             self._service = await asyncio.to_thread(self._build_service)
             self.log.info("Gmail-Verbindung aktiv")
-        except Exception:  # noqa: BLE001
-            self.log.exception("Gmail-Verbindung fehlgeschlagen")
+        except Exception as exc:  # noqa: BLE001
+            if is_invalid_scope_error(exc):
+                self.log.error(
+                    "Google-Token wurde mit älteren, engeren Scopes erteilt als "
+                    "aktuell benötigt – ein Refresh kann keine neuen Scopes "
+                    "nachfordern. Einmalig erneut ausführen: python "
+                    "scripts/google_auth.py (siehe docs/integrations.md)."
+                )
+            else:
+                self.log.exception("Gmail-Verbindung fehlgeschlagen")
             return
         self._task = asyncio.create_task(self._loop())
 
