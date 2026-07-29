@@ -177,8 +177,14 @@ class Backend {
    * Backend/keiner Antwort (Timeout `timeoutMs`) kommt ``{ok: false, error:
    * null}`` zurück – Aufrufer sollen dann still auf die Browser-Stimme
    * zurückfallen. Bei einem echten Backend-Fehler (z. B. Piper-Modell konnte
-   * nicht geladen werden) enthält ``error`` den Grund. */
-  requestVoiceAudio(text: string, timeoutMs = 6000): Promise<VoiceSpeakOutcome> {
+   * nicht geladen werden) enthält ``error`` den Grund.
+   *
+   * 15s statt knapper bemessen, weil der ERSTE Sprechversuch nach jedem
+   * Backend-Start zusätzlich das Piper-Modell lädt (ONNX + Phonemizer-Init,
+   * mehrere Sekunden) – das passiert innerhalb desselben Requests, ein zu
+   * knappes Timeout ließ genau diesen ersten Versuch (und jeden auf einer
+   * ausgelasteten Maschine) lautlos in den Browser-Fallback rutschen. */
+  requestVoiceAudio(text: string, timeoutMs = 15000): Promise<VoiceSpeakOutcome> {
     return new Promise((resolve) => {
       if (!this.online) {
         resolve({ ok: false, error: null });
