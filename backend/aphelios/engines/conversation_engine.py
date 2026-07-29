@@ -116,6 +116,23 @@ _TOOLS: list[dict] = [
         },
     },
     {
+        "name": "save_code_to_file",
+        "description": (
+            "Schreibt Code UND speichert ihn in einer Datei auf dem PC des Nutzers "
+            "(z. B. zum direkten Öffnen in VS Code danach). Nur nutzen, wenn der "
+            "Nutzer explizit sagt, dass etwas gespeichert/in eine Datei geschrieben "
+            "werden soll – sonst write_code (nur im Chat, kein Datei-Zugriff) nutzen."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Zielpfad der Datei."},
+                "request": {"type": "string", "description": "Die Programmier-Anfrage."},
+            },
+            "required": ["path", "request"],
+        },
+    },
+    {
         "name": "run_powershell",
         "description": "Führt einen PowerShell-Befehl auf dem PC des Nutzers aus.",
         "input_schema": {
@@ -223,6 +240,14 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         return "plan.request", {"task": tool_input.get("task", "")}
     if name == "write_code":
         return "coding.request", {"text": tool_input.get("request", "")}
+    if name == "save_code_to_file":
+        path = tool_input.get("path", "")
+        request_text = tool_input.get("request", "")
+        # Pfad IMMER in Anführungszeichen einbetten, unabhängig davon, ob er
+        # Leerzeichen enthält – _parse_code_file_request() erkennt einen
+        # gequoteten Pfad zuverlässig, ein ungequoteter würde am ersten
+        # Leerzeichen (falls vorhanden) fälschlich abgeschnitten.
+        return "coding.request", {"action": "write_file", "text": f'"{path}" {request_text}'.strip()}
     if name == "run_powershell":
         return "automation.request", {"action": "run_powershell", "command": tool_input.get("command", "")}
     if name == "open_app":

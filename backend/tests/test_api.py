@@ -131,6 +131,33 @@ async def test_code_slash_command_routes_to_coding_request():
     assert received[0].data["text"] == "Schreib mir eine Fibonacci-Funktion"
 
 
+async def test_code_datei_slash_command_routes_to_coding_request_with_write_file_action():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("coding.request", lambda e: received.append(e))
+
+    await _handle_client_message(
+        bus, {"type": "chat", "id": "x2d", "text": "/code-datei hello.py Schreibe eine Begrüßungsfunktion"}
+    )
+
+    assert len(received) == 1
+    assert received[0].data == {
+        "action": "write_file",
+        "text": "hello.py Schreibe eine Begrüßungsfunktion",
+        "id": "x2d",
+    }
+
+
+async def test_code_datei_without_argument_routes_with_empty_text():
+    bus = EventBus()
+    received: list[Event] = []
+    bus.subscribe("coding.request", lambda e: received.append(e))
+
+    await _handle_client_message(bus, {"type": "chat", "id": "x2e", "text": "/code-datei"})
+
+    assert received[0].data == {"action": "write_file", "text": "", "id": "x2e"}
+
+
 async def test_plan_step_complete_message_routes_correctly():
     bus = EventBus()
     received: list[Event] = []
@@ -348,6 +375,7 @@ async def test_help_command_lists_every_slash_command_without_hitting_an_engine(
         "/denke",
         "/wissen",
         "/code",
+        "/code-datei",
         "/run",
         "/oeffne",
         "/schliesse",

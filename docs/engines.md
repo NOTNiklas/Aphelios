@@ -417,19 +417,36 @@ Kurzfassung:
   angeben) und keine Cookie-/Session-Persistenz zwischen Aufrufen.
 
 ### CodingEngine (real, erste Ausbaustufe)
-Ausgelöst über `/code <Anfrage>` (oder von Claude selbst über das Werkzeug
-`write_code`, siehe oben) – schreibt/erklärt Code über Claude mit einem
-dedizierten Coding-Persona (vollständiger, lauffähiger Code in
-Markdown-Codeblöcken + kurze Erklärung), gestreamt wie `/denke`.
+Zwei Aktionen, ausgelöst über den Chat:
+
+- `/code <Anfrage>` (oder von Claude selbst über das Werkzeug `write_code`,
+  siehe oben) – schreibt/erklärt Code über Claude mit einem dedizierten
+  Coding-Persona (vollständiger, lauffähiger Code in Markdown-Codeblöcken +
+  kurze Erklärung), gestreamt wie `/denke`. Bleibt im Chat, keine Datei
+  wird angefasst.
+- `/code-datei <Pfad> <Anfrage>` (oder über das Werkzeug
+  `save_code_to_file`) – wie oben, aber der **erste Code-Block** der
+  Antwort wird zusätzlich in `<Pfad>` geschrieben (VS-Code-Workflow: Datei
+  danach im Editor öffnen). Pfad-Erkennung über Anführungszeichen für
+  Pfade mit Leerzeichen (`"C:\Mein Ordner\a.py"`), sonst zählt das erste
+  Wort als Pfad – anders als bei `OfficeEngine`, wo eine bekannte
+  Datei-Endung als Trenner diente: Code-Dateien haben zu viele mögliche
+  Endungen, um das zuverlässig zu erkennen. **Immer** mit
+  SecurityGate-Bestätigung (dieselbe Abwägung wie `delete_path` in der
+  `AutomationEngine`), das Elternverzeichnis muss bereits existieren
+  (APHELIOS legt keine neuen Ordner an). Enthält Claudes Antwort keinen
+  Code-Block, wird nichts gespeichert.
 
 - Ohne `ANTHROPIC_API_KEY`: ehrliche Absage statt eines Fallback-Rateversuchs
   – anders als z. B. `PlanningEngine` (Satzgrenzen-Heuristik ohne Claude)
   ergibt "Code ohne LLM" keinen sinnvollen Ersatz.
-- **Bewusst NICHT in dieser ersten Ausbaustufe:** Kein Datei-Lesen/-Schreiben
-  – Code entsteht nur im Chat. Beides bräuchte eine sorgfältig durchdachte
-  SecurityGate-Bestätigung (Lesen: Dateiinhalt könnte sensible Daten
-  enthalten UND ginge an die Claude-API; Schreiben: beliebige Datei
-  überschreiben) – eine spätere Ausbaustufe.
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Kein Datei-**Lesen**
+  (nur Schreiben) – bräuchte dieselbe Sensibilitäts-Abwägung wie bei der
+  `OfficeEngine`, hier aber für beliebige Dateitypen statt nur
+  Office-Formate, eine spätere Ausbaustufe. Ebenso keine eigene
+  VS-Code-Extension mit Live-Anbindung – `/code-datei` schreibt die Datei,
+  der Nutzer öffnet sie selbst (oder APHELIOS via `/oeffne`); eine echte
+  Extension wäre ein eigenständiges, deutlich größeres Softwareprojekt.
 - **Bewusst NICHT als eigener Befehl:** Git/Docker/WSL – das sind normale
   Kommandozeilenbefehle, die `/run` (`AutomationEngine`) bereits abdeckt
   (z. B. `/run git status`, `/run docker ps`, `/run wsl -l`); eine zweite,

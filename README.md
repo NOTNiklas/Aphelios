@@ -4,7 +4,7 @@
 
 ### Ein J.A.R.V.I.S.-inspirierter Desktop-AI-Betriebssystem-Assistent
 
-**Version:** Alpha 1.5 · **Status:** Second Brain (Vektorsuche, RAG, proaktives Wiederfinden) · **Ziel-Plattform:** Windows (Desktop via Tauri)
+**Version:** Alpha 1.6 · **Status:** Developer & Office (Coding, Browser, Office-Dokumente, KI-Werkzeug-Auswahl) · **Ziel-Plattform:** Windows (Desktop via Tauri)
 
 `Kein Chatbot. Ein zweites Gehirn.`
 
@@ -17,13 +17,13 @@ AI-Assistent, der langfristig den kompletten PC verwaltet – mit einem holograf
 Iron-Man-HUD, mehreren unabhängigen AI-Engines, einem Obsidian-basierten Langzeitgedächtnis,
 Sprachaktivierung und Automatisierung.
 
-Dieses Repository enthält das **Alpha-1.5-Grundgerüst**: eine saubere, dokumentierte
+Dieses Repository enthält das **Alpha-1.6-Grundgerüst**: eine saubere, dokumentierte
 Architektur plus einen **lauffähigen MVP** (HUD-Oberfläche, echte System-Statistiken,
-AI-Konsole mit persistentem Gedächtnis, Reasoning & Planning, Windows-Automation,
-lokale Sprachausgabe/-erkennung, Bildschirm-Verständnis, semantische Vault-Suche mit
-RAG-Wissensabfragen). Alle weiteren Module
-(Browser, Office, Smart Home …) sind als Schnittstellen vorbereitet und lassen
-sich später einfach ergänzen.
+AI-Konsole mit persistentem Gedächtnis und KI-gesteuerter Werkzeug-Auswahl, Reasoning &
+Planning, Windows-Automation, lokale Sprachausgabe/-erkennung, Bildschirm-Verständnis,
+semantische Vault-Suche mit RAG-Wissensabfragen, Code schreiben/speichern, Webseiten und
+Office-Dokumente lesen). Alle weiteren Module (Smart Home, weitere App-Integrationen …)
+sind als Schnittstellen vorbereitet und lassen sich später einfach ergänzen.
 
 > Der vollständige Funktionsumfang aus der Vision ist ein **Langzeitziel**. Was
 > bereits real funktioniert und was noch Stub ist, steht in [`ROADMAP.md`](./ROADMAP.md).
@@ -76,7 +76,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |
 | **WhatsApp** | 📄 Nur dokumentiert | Bewusst kein Code – Abwägung in [`docs/integrations.md`](./docs/integrations.md) |
 | **Browser (Webseiten lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/browse <URL> [Frage]` öffnet eine Seite in echtem Chromium (Playwright), Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/browser.md`](./docs/browser.md) |
-| **Coding (Code schreiben/erklären)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/code <Anfrage>` – vollständiger, lauffähiger Code + kurze Erklärung, nur im Chat (kein Datei-Zugriff); Git/Docker/WSL laufen bereits über `/run` |
+| **Coding (Code schreiben/erklären)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/code <Anfrage>` – vollständiger, lauffähiger Code + kurze Erklärung im Chat; `/code-datei <Pfad> <Anfrage>` speichert den Code zusätzlich (mit Bestätigung) – bereit zum Öffnen in VS Code; Git/Docker/WSL laufen bereits über `/run` |
 | **Office (Dokumente lesen)** | ✅ Real, erste Ausbaustufe (Alpha 1.6) | `/dokument <Pfad> [Frage]` liest Word/Excel/PowerPoint/PDF, Claude beantwortet Fragen dazu – immer mit Bestätigung – [`docs/office.md`](./docs/office.md) |
 
 ---
@@ -100,7 +100,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 │   │ System   │Conversation│ Memory │ Weather  │ Mail/Kalender│ │
 │   │ (psutil) │(Claude API)│(Obsidian)│(Open-Meteo)│ (Google, opt.)│
 │   └──────────┴────────────┴────────┴──────────┴─────────────┘ │
-│  Vision · Automation · Voice · Browser · Coding (real) · Agent (Stub) │
+│ Vision · Automation · Voice · Browser · Coding · Office (real) · Agent (Stub) │
 │                                                                │
 │   SecurityGate  ·  PluginLoader  ·  Config                     │
 └────────────────────────────────────────────────────────────---┘
@@ -211,5 +211,5 @@ Systemdateien ändern, Passwörter anzeigen) werden vom **SecurityGate** abgefan
 ---
 
 <div align="center">
-<sub>APHELIOS · Alpha 1.5 · „Oh ja, das hatten wir schon einmal."</sub>
+<sub>APHELIOS · Alpha 1.6 · „Oh ja, das hatten wir schon einmal."</sub>
 </div>

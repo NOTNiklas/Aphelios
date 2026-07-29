@@ -138,7 +138,7 @@ def create_app(config: Config | None = None) -> FastAPI:
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
-    app = FastAPI(title="APHELIOS API", version="1.5.0a1", lifespan=lifespan)
+    app = FastAPI(title="APHELIOS API", version="1.6.0a1", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[config.cors_origin, "http://localhost:5173", "http://127.0.0.1:5173"],
@@ -151,7 +151,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     async def health() -> dict:
         return {
             "status": "online",
-            "version": "1.5.0a1",
+            "version": "1.6.0a1",
             "engines": manager.status(),
             "clients": connections.count,
             "ai": "claude" if config.has_anthropic else "fallback",
@@ -208,6 +208,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/denke ": ("reasoning.request", "text", {}),
     "/wissen ": ("knowledge.request", "text", {}),
     "/code ": ("coding.request", "text", {}),
+    "/code-datei ": ("coding.request", "text", {"action": "write_file"}),
     "/run ": ("automation.request", "command", {"action": "run_powershell"}),
     "/oeffne ": ("automation.request", "name", {"action": "open_app"}),
     "/schliesse ": ("automation.request", "name", {"action": "close_app"}),
@@ -225,6 +226,7 @@ _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
     "/fehler": ("vision.request", {"action": "find_error"}),
     "/browse": ("browser.request", {"text": ""}),
     "/dokument": ("office.request", {"text": ""}),
+    "/code-datei": ("coding.request", {"action": "write_file", "text": ""}),
 }
 
 #: Einzige Quelle der Wahrheit für ``/help``/``/hilfe`` – bei jedem neuen
@@ -235,6 +237,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/denke <Frage>", "Zeigt APHELIOS' Analyse sichtbar (Werkzeug-Wahl → Kontext → Antwort)"),
     ("/wissen <Frage>", "Beantwortet NUR auf Basis des Obsidian-Vaults (RAG, mit Quellenangabe)"),
     ("/code <Anfrage>", "Schreibt/erklärt Code (nur im Chat, kein Datei-Zugriff)"),
+    ("/code-datei <Pfad> <Anfrage>", "Schreibt Code UND speichert ihn in der Datei – mit Bestätigung"),
     ("/run <PowerShell-Befehl>", "Führt einen Befehl aus – immer mit Bestätigungsdialog"),
     ("/oeffne <Programm>", "Startet ein Programm – mit Bestätigung"),
     ("/schliesse <Programm>", "Beendet ein Programm – mit Bestätigung"),

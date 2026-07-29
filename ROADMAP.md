@@ -128,7 +128,7 @@ Legende: ✅ fertig (real) · 🟡 teilweise / Basis · 🔌 Schnittstelle vorha
 Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 [`docs/vision.md`](./docs/vision.md).
 
-## Alpha 1.5 — Second Brain (fortgeschritten) *(dieser Stand)*
+## Alpha 1.5 — Second Brain (fortgeschritten)
 
 - ✅ Automatische Verlinkung & Graph-Aufbau (MemoryEngine, siehe oben)
 - ✅ Automatisches Protokoll statt manuellem Merken – Automation (Alpha 1.2)
@@ -155,13 +155,16 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   beliebige externe Dokumentation (PDFs, Webseiten) – das ist eine spätere
   Ausbaustufe, aktuell nur der eigene Obsidian-Vault als Wissensquelle.
 
-## Alpha 1.6 — Developer & Office
+## Alpha 1.6 — Developer & Office *(dieser Stand)*
 
-- ✅ **CodingEngine (schreiben/erklären)** – `/code <Anfrage>` liefert
-  vollständigen, lauffähigen Code + kurze Erklärung über Claude, nur im
-  Chat. Bewusst NICHT: Datei-Lesen/-Schreiben (bräuchte eine sorgfältig
-  durchdachte SecurityGate-Bestätigung, spätere Ausbaustufe) und kein
-  dediziertes Git/Docker/WSL-Kommando (deckt `/run` bereits ab) – siehe
+- ✅ **CodingEngine (schreiben/erklären, optional in eine Datei)** –
+  `/code <Anfrage>` liefert vollständigen, lauffähigen Code + kurze
+  Erklärung im Chat; `/code-datei <Pfad> <Anfrage>` speichert den ersten
+  Code-Block zusätzlich in der Datei (immer mit SecurityGate-Bestätigung)
+  – bereit zum Öffnen in VS Code. Bewusst NICHT: Datei-**Lesen** (bräuchte
+  dieselbe Sensibilitäts-Abwägung wie bei der `OfficeEngine`, hier für
+  beliebige Dateitypen, spätere Ausbaustufe) und kein dediziertes
+  Git/Docker/WSL-Kommando (deckt `/run` bereits ab) – siehe
   `docs/engines.md`
 - ✅ **BrowserEngine (Playwright-Steuerung)** – `/browse <URL> [Frage]`
   öffnet eine Seite in einem echten Chromium und beantwortet Fragen dazu
@@ -177,7 +180,17 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   Dokumente erstellen/schreiben, Excel-Formeln neu berechnen, eingebettete
   Bilder/Diagramme, alte Binärformate (.doc/.xls/.ppt) – siehe
   `docs/office.md`
-- ⬜ VS Code / Claude Code Integration
+- ✅ **VS Code / Claude Code Integration** – der Umfang war beim Zuschnitt
+  dieses Punkts stark auslegungsabhängig (bereits per `/oeffne` abgedeckt
+  bis hin zu einer eigenständigen VS-Code-Extension als Get-Projekt); eine
+  Rückfrage dazu blieb unbeantwortet, deshalb die proportionalste,
+  begründbare Lesart umgesetzt: `/code-datei` (siehe oben) schreibt von
+  Claude generierten Code direkt in eine Datei – der Nutzer öffnet sie
+  danach selbst in VS Code (oder APHELIOS via `/oeffne`). Bewusst NICHT:
+  eine eigene VS-Code-Extension mit Live-Anbindung ans Backend – das wäre
+  ein eigenständiges, deutlich größeres Softwareprojekt (eigenes
+  TypeScript-Repo, VS Code Extension API, eigenes Build/Package) und sollte
+  nur mit explizitem Nutzer-Einverständnis begonnen werden.
 - ✅ **KI-gesteuerte Werkzeug-Auswahl (Claude Tool-Use)** – nicht im
   ursprünglichen Alpha-1.6-Umfang, aber eng verwandt: die
   `ConversationEngine` kann jetzt selbst entscheiden, ob eine normal

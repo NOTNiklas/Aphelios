@@ -54,6 +54,15 @@ def test_write_code_maps_to_coding_request():
     )
 
 
+def test_save_code_to_file_wraps_path_in_quotes():
+    # Der Pfad wird immer gequotet, unabhaengig von Leerzeichen - so erkennt
+    # _parse_code_file_request() ihn zuverlaessig als EINEN Pfad (siehe
+    # test_coding.py: test_parse_code_file_request_quoted_path_with_spaces).
+    assert _tool_call_to_event(
+        "save_code_to_file", {"path": "hello.py", "request": "Begrüßungsfunktion"}
+    ) == ("coding.request", {"action": "write_file", "text": '"hello.py" Begrüßungsfunktion'})
+
+
 def test_open_app_maps_to_automation_request():
     assert _tool_call_to_event("open_app", {"name": "Spotify"}) == (
         "automation.request",
