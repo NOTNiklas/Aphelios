@@ -341,11 +341,55 @@ Quellen. `KnowledgeEngine` durchsucht **immer** gezielt den Vault und
 antwortet **ausschließlich** daraus – für den Fall „was habe ich mir dazu
 notiert?" statt beiläufigem Kontext.
 
-## Engines in Alpha 1.6 (erste Ausbaustufe: BrowserEngine)
+## Engines in Alpha 1.6 (erste Ausbaustufe: BrowserEngine, Werkzeug-Nutzung)
 
 Alpha 1.6 „Developer & Office" umfasst laut `ROADMAP.md` vier Bausteine
 (CodingEngine, BrowserEngine, Office-Integration, VS-Code-Integration) – hier
 zunächst die **BrowserEngine**, die übrigen drei bleiben vorerst Stubs.
+Zusätzlich kann Claude jetzt selbst über Claudes **Tool-Use-API** entscheiden,
+ob eine normale Chat-Nachricht ein Werkzeug braucht (siehe unten).
+
+### ConversationEngine – Werkzeug-Nutzung (erweitert)
+Bisher lösten Werkzeuge NUR explizite Slash-Befehle aus (`/wissen`, `/oeffne`
+…, serverseitig per Text-Präfix erkannt, siehe `_SLASH_COMMANDS` in
+`server.py`). Jetzt kann Claude über die offizielle
+[Tool-Use-API](https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview)
+selbst entscheiden, ob eine ganz normal formulierte Nachricht ein Werkzeug
+braucht – "öffne mal Spotify" löst dieselbe `automation.request` aus wie
+`/oeffne Spotify`, ganz ohne dass der Nutzer den Befehl kennen muss.
+
+- `_TOOLS` (in `conversation_engine.py`) deklariert ein Werkzeug pro
+  bestehender Fähigkeit: `search_vault` (→ KnowledgeEngine), `create_plan`
+  (→ PlanningEngine), `run_powershell`/`open_app`/`close_app`/`delete_path`/
+  `list_downloads` (→ AutomationEngine), `analyze_screen`/`read_screen_text`/
+  `find_screen_error` (→ VisionEngine), `browse_page` (→ BrowserEngine).
+- Entscheidet sich Claude für ein Werkzeug (`stop_reason == "tool_use"`),
+  übersetzt `_tool_call_to_event()` den Aufruf 1:1 in dasselbe
+  Topic/Datenformat, das auch der passende Slash-Befehl erzeugen würde –
+  **dieselbe** Ziel-Engine übernimmt danach komplett (eigene
+  SecurityGate-Bestätigung, eigenes Streaming, eigenes `chat.response`).
+  Kein Duplikat der Ausführungslogik.
+- Bei riskanten Aktionen (`run_powershell`, `open_app`, `close_app`,
+  `delete_path`) bleibt die Bestätigung über das SecurityGate **Pflicht** –
+  daran ändert die Werkzeug-Auswahl durch die KI nichts; es ist derselbe
+  Bestätigungsdialog, den auch ein Slash-Befehl auslösen würde.
+- Streamt Claude ausnahmsweise Text VOR dem Werkzeug-Aufruf (der System-Prompt
+  weist an, das zu vermeiden), wird dieser Text als eigene, abgeschlossene
+  Antwort behandelt und der Werkzeug-Aufruf bekommt eine neue Nachrichten-ID
+  – sonst könnte das spätere `chat.token` der Ziel-Engine an eine bereits
+  abgeschlossene Sprechblase angehängt werden oder mit ihr kollidieren.
+- **Bewusst NICHT als Werkzeug:** `/denke` (ReasoningEngine) – dessen Sinn
+  ist die für den Nutzer sichtbare, explizit angeforderte Analyse mit
+  Zwischenschritten; als von Claude selbst gewähltes Werkzeug würde es nur
+  an ein zweites Modell delegieren, ohne die Zwischenschritte zu zeigen.
+- **Bewusst NICHT in dieser ersten Ausbaustufe:** Werkzeug-Aufrufe landen
+  nicht im persistenten Gesprächsverlauf (`_remember_turn`) – das
+  tatsächliche Ergebnis entsteht asynchron in einer anderen Engine und ist
+  von der ConversationEngine aus nicht ohne Weiteres einzusammeln. Ein
+  Folge-„und, hat's geklappt?" hat dadurch keinen Kontext zur vorherigen
+  Aktion.
+- Nur ein Werkzeug pro Nachricht (der erste `tool_use`-Block einer Antwort) –
+  parallele Mehrfach-Aufrufe unterstützt diese erste Ausbaustufe nicht.
 
 ### BrowserEngine (real, erste Ausbaustufe)
 Liest Webseiten über einen echten, Playwright-gesteuerten Chromium – Details,

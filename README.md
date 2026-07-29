@@ -56,7 +56,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 |---|---|---|
 | **HUD-Oberfläche** | ✅ Real | Rotierender Core, System-Gauges, Info-Panels, animierte AI-Konsole |
 | **System-Monitoring** | ✅ Real | CPU / RAM / Disk / Netzwerk / Temperatur / Akku via `psutil` |
-| **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key), persistenter Kontext |
+| **AI-Konsole** | ✅ Real | Konversation über Claude API (mit Fallback ohne API-Key), persistenter Kontext, entscheidet per Tool-Use selbst über passende Werkzeuge (Alpha 1.6) – "öffne Spotify" funktioniert auch ohne `/oeffne` |
 | **Reasoning** | ✅ Real (Alpha 1.1) | Mehrstufige Analyse mit sichtbarer Werkzeug-Auswahl – `/denke <Frage>` im Chat |
 | **Planning** | ✅ Real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel – `/plan <Aufgabe>` im Chat |
 | **Automation** | ✅ Real (Alpha 1.2, Windows) | PowerShell, Datei-Operationen, Programme starten/schließen – immer mit Bestätigung |

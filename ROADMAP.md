@@ -166,6 +166,13 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   `docs/browser.md`
 - ⬜ Office: Word/Excel/PowerPoint, PDF-Analyse
 - ⬜ VS Code / Claude Code Integration
+- ✅ **KI-gesteuerte Werkzeug-Auswahl (Claude Tool-Use)** – nicht im
+  ursprünglichen Alpha-1.6-Umfang, aber eng verwandt: die
+  `ConversationEngine` kann jetzt selbst entscheiden, ob eine normal
+  formulierte Chat-Nachricht ein Werkzeug braucht ("öffne Spotify" statt
+  `/oeffne Spotify`), statt nur auf explizite Slash-Befehle zu reagieren.
+  Nutzt dieselben Engines/SecurityGate-Bestätigungen wie die Slash-Befehle,
+  siehe `docs/engines.md`
 
 ## Alpha 1.7 — Weitere App-Integrationen
 
