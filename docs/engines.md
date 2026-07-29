@@ -512,3 +512,28 @@ Bisher rein lesend (kommende Termine abrufen), jetzt zusätzlich
   – bräuchte eine eigene Sprachverarbeitung mit vielen Zeitzonen-/
   Sonderfällen, für diese Ausbaustufe unverhältnismäßig.
 - Dieselbe Scope-Fehlerbehandlung wie `MailEngine` (siehe oben).
+
+## Engines in Alpha 1.8 (MusicEngine: Spotify-Steuerung)
+
+### MusicEngine (real, optional)
+Pollt periodisch den aktuell gespielten Spotify-Song (`music.update`:
+Titel, Interpret, Album-Cover, Fortschritt) und steuert die Wiedergabe –
+Play/Pause/Skip/Lautstärke/„Gefällt mir". Einrichtung (eigene Spotify-App,
+OAuth-Login) in
+[`docs/integrations.md`](./integrations.md#spotify-einrichten).
+
+- Reine Buttons im Musik-Panel, kein Slash-Befehl – wie beim Abhaken eines
+  Aufgaben-Schritts (`plan.step.complete`) reicht eine direkte
+  WebSocket-Nachricht (`music.play.request` etc.) ohne Chat-Text-Parsing.
+- **Bewusst `RiskLevel.SAFE`** statt `CONFIRM`: Play/Pause/Skip/Lautstärke
+  sind – anders als eine gesendete Mail oder ein angelegter Termin –
+  trivial reversible Aktionen ohne Konsequenz für Dritte, siehe
+  `docs/security.md`.
+- Nach jeder Steuerungsaktion wird der Zustand sofort neu abgefragt (statt
+  auf das nächste Poll-Intervall zu warten), damit Buttons im HUD spürbar
+  reagieren.
+- Wiedergabesteuerung erfordert Spotify Premium (Spotify-API-Einschränkung);
+  das reine Anzeigen des aktuellen Songs funktioniert auch mit Free.
+- Eigenes, schlankes OAuth-Modul (`aphelios/integrations/spotify_auth.py`)
+  statt einer SDK-Abhängigkeit – Spotifys Authorization-Code-Flow ist ein
+  einfacher REST-Aufruf, den `httpx` (Basis-Abhängigkeit) direkt kann.

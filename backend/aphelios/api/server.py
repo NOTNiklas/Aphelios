@@ -40,6 +40,7 @@ BROADCAST_TOPICS = [
     "mail.update",
     "calendar.update",
     "plan.update",
+    "music.update",
     "voice.audio",
     "voice.transcript",
     "voice.error",
@@ -57,6 +58,7 @@ REPLAYABLE_TOPICS = [
     "mail.update",
     "calendar.update",
     "plan.update",
+    "music.update",
 ]
 
 
@@ -299,6 +301,17 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(Event("memory.note", message.get("data", {}), source="hud"))
     elif msg_type == "plan.step.complete":
         await bus.publish(Event("plan.step.complete", {"index": message.get("index")}, source="hud"))
+    elif msg_type in (
+        "music.play.request",
+        "music.pause.request",
+        "music.next.request",
+        "music.previous.request",
+    ):
+        await bus.publish(Event(msg_type, {}, source="hud"))
+    elif msg_type == "music.volume.request":
+        await bus.publish(Event(msg_type, {"level": message.get("level")}, source="hud"))
+    elif msg_type == "music.like.request":
+        await bus.publish(Event(msg_type, {"liked": bool(message.get("liked"))}, source="hud"))
     elif msg_type == "voice.speak":
         request_id = message.get("id", uuid.uuid4().hex)
         await bus.publish(

@@ -72,6 +72,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Vision (Bildschirm-Verständnis)** | ✅ Real, erste Ausbaustufe (Alpha 1.4) | Screenshot + Claude Vision (`/sieh`), lokales OCR (`/lies`), Fehlererkennung (`/fehler`) – immer mit Bestätigung – [`docs/vision.md`](./docs/vision.md) |
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
 | **Gmail / Kalender** | ✅ Real, optional (lesend + Alpha-1.7-Schreibzugriff) | `/mail-senden`, `/termin-anlegen` – immer mit Bestätigung; eigener Google-OAuth-Client nötig, siehe [`docs/integrations.md`](./docs/integrations.md) |
+| **Musik (Spotify)** | ✅ Real, optional (Alpha 1.8) | Zeigt aktuellen Song (Titel, Cover, Fortschritt), steuert Play/Pause/Skip/Lautstärke/„Gefällt mir" – eigene Spotify-App nötig, siehe [`docs/integrations.md`](./docs/integrations.md#spotify-einrichten) |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
 | **Event-Bus & Engine-Manager** | ✅ Real | Ereignisgesteuerte Kommunikation zwischen unabhängigen Engines |
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |

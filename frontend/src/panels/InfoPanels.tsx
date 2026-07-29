@@ -10,6 +10,7 @@
 import { Panel } from "../hud/Panel";
 import { MOCK_INFO } from "../lib/mock";
 import { useHud } from "../store/hud";
+import { Music } from "./Music";
 import { PreviewHint } from "./PreviewHint";
 import { Weather } from "./Weather";
 
@@ -38,6 +39,8 @@ export function InfoPanels() {
   return (
     <div className="flex w-64 flex-col gap-3">
       <Weather />
+
+      <Music />
 
       <Panel title="Kalender" delay={0.05}>
         {calendar?.error ? (

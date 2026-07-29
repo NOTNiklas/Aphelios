@@ -44,6 +44,17 @@ export const MOCK_INFO = {
   ],
 };
 
+/** Vorschau-Song fürs Musik-Panel, solange keine echte Spotify-Verbindung
+ * steht (siehe docs/integrations.md, Abschnitt "Spotify einrichten"). */
+export const MOCK_MUSIC = {
+  track: "The Runner",
+  artist: "Foals",
+  album: "Indie Rock Road Trip",
+  duration_ms: 233000,
+  progress_ms: 71000,
+  is_playing: true,
+};
+
 /** Eine Fallback-Antwort, die zeichenweise „gestreamt" wird. */
 export function mockReply(text: string): string {
   const t = text.toLowerCase();

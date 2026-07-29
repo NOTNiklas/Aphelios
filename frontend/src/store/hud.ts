@@ -8,6 +8,7 @@ import type {
   ConsoleMessage,
   Link,
   MailData,
+  MusicData,
   PlanData,
   SystemStats,
   WeatherData,
@@ -19,6 +20,7 @@ interface HudState {
   weather: WeatherData | null;
   mail: MailData | null;
   calendar: CalendarData | null;
+  music: MusicData | null;
   /** Aktueller Plan (PlanningEngine, ausgelöst über "/plan <Aufgabe>"). */
   plan: PlanData | null;
   engines: Record<string, string>;
@@ -49,6 +51,7 @@ export const useHud = create<HudState>((set) => ({
   weather: null,
   mail: null,
   calendar: null,
+  music: null,
   plan: null,
   engines: {},
   ai: "fallback",
@@ -89,6 +92,9 @@ export const useHud = create<HudState>((set) => ({
 
         case "calendar.update":
           return { calendar: msg.data as unknown as CalendarData };
+
+        case "music.update":
+          return { music: msg.data as unknown as MusicData };
 
         case "plan.update":
           return { plan: msg.data as unknown as PlanData };

@@ -7,6 +7,7 @@ from aphelios.engines.coding_engine import CodingEngine
 from aphelios.engines.conversation_engine import ConversationEngine
 from aphelios.engines.mail_engine import MailEngine
 from aphelios.engines.memory_engine import MemoryEngine
+from aphelios.engines.music_engine import MusicEngine
 from aphelios.engines.planning_engine import PlanningEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.knowledge_engine import KnowledgeEngine
@@ -27,6 +28,7 @@ ALL_ENGINES = [
     WeatherEngine,
     MailEngine,
     CalendarEngine,
+    MusicEngine,
     ReasoningEngine,
     PlanningEngine,
     AutomationEngine,

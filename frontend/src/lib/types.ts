@@ -59,6 +59,22 @@ export interface PlanData {
   created_at: number;
 }
 
+/** Echte Spotify-Wiedergabedaten von der MusicEngine (optional, braucht Spotify-OAuth). */
+export interface MusicData {
+  connected?: boolean;
+  is_playing?: boolean;
+  track?: string | null;
+  artist?: string | null;
+  album?: string | null;
+  album_art?: string | null;
+  duration_ms?: number | null;
+  progress_ms?: number | null;
+  volume?: number | null;
+  liked?: boolean | null;
+  error?: string;
+  updated_at: number;
+}
+
 export interface ConfirmationRequest {
   id: string;
   action: string;

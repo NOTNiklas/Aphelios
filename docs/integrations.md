@@ -10,6 +10,7 @@ die wirklich echte Daten liefert, als eine große, die nur so aussieht.**
 | **Wetter** (Open-Meteo) | ✅ Real, sofort aktiv | Nein |
 | **Gmail** (ungelesene Mails) | ✅ Real, optional | Ja – eigener Google-OAuth-Client |
 | **Google Kalender** (kommende Termine) | ✅ Real, optional | Ja – derselbe Google-OAuth-Client |
+| **Spotify** (Song lesen + Play/Pause/Skip/Lautstärke/Like) | ✅ Real, optional | Ja – eigene Spotify-App |
 | **WhatsApp** | 🔌 Nur dokumentiert, kein Code | Ja – siehe Abwägung unten |
 | **Handy-Zugriff (PWA)** | ✅ Real, heute nutzbar | Nein (gleiches WLAN) |
 | **Native Handy-App** | ⬜ Geplant, eigenes Projekt | – |
@@ -116,6 +117,63 @@ beiden Fällen (Slash-Befehl oder KI-Auswahl) zeigt APHELIOS **immer** eine
 Bestätigung mit dem vollständigen Inhalt, bevor etwas gesendet/angelegt wird
 – eine gesendete Mail lässt sich nicht zurückholen, ein Termin ist für
 andere Teilnehmer sichtbar.
+
+---
+
+## Spotify einrichten
+
+Zeigt den aktuell laufenden Song im HUD (Titel, Interpret, Cover, Fortschritt)
+und steuert die Wiedergabe – Play/Pause/Skip/Lautstärke/„Gefällt mir". Anders
+als Wetter braucht Spotify zwingend eine eigene App-Anmeldung: Spotifys
+öffentlicher Client-Credentials-Zugang erlaubt nur Katalogdaten, keine
+Wiedergabesteuerung.
+
+> **Play/Pause/Skip/Lautstärke setzen Spotify Premium voraus** (Spotify-
+> API-Einschränkung, keine APHELIOS-Einschränkung). Der aktuelle Song wird
+> auch mit einem Free-Account angezeigt.
+
+### 1 · Spotify-App anlegen
+
+1. [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+   → mit dem eigenen Spotify-Account anmelden → **Create app**.
+2. Beliebiger Name/Beschreibung. **Redirect URI** muss exakt sein:
+   ```
+   http://127.0.0.1:8898/callback
+   ```
+3. API/SDK: „Web API" ankreuzen, speichern.
+4. In den App-Einstellungen **Client ID** und **Client Secret** kopieren.
+
+### 2 · In APHELIOS eintragen
+
+In der `.env` (siehe `.env.example`):
+
+```bash
+SPOTIFY_CLIENT_ID=deine-client-id
+SPOTIFY_CLIENT_SECRET=dein-client-secret
+```
+
+### 3 · Einmalig anmelden
+
+```bash
+cd backend
+python scripts/spotify_auth.py
+```
+
+Ein Browser-Fenster öffnet sich zur Spotify-Anmeldung (keine zusätzliche
+Abhängigkeit nötig – nutzt `httpx`, das APHELIOS ohnehin mitbringt). Nach der
+Bestätigung liegt eine Token-Datei unter dem in
+`APHELIOS_SPOTIFY_TOKEN_PATH` konfigurierten Pfad (Standard:
+`./data/spotify_token.json`, wie beim Google-Token relativ zum
+`backend`-Ordner verankert, nicht zum Arbeitsverzeichnis). Backend neu
+starten (`python -m aphelios`) – das Musik-Panel zeigt ab jetzt echte Daten
+statt der Vorschau.
+
+> Die Token-Datei enthält ein Zugriffs-Refresh-Token – **nicht committen**
+> (liegt standardmäßig unter `./data/`, das laut `.gitignore` ignoriert wird).
+
+**Läuft nichts?** Das Panel zeigt „Kein Song aktiv – starte Spotify auf einem
+Gerät" – Spotify braucht ein aktives Gerät (Desktop-App, Handy, Web Player),
+sonst weiß die API nicht, wohin ein Play-Befehl gehen soll.
 
 ---
 

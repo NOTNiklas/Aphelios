@@ -84,6 +84,12 @@ class Config:
     google_token_path: Path = Path("./data/google_token.json")
     google_poll_interval: float = 300.0
 
+    # --- Spotify (MusicEngine, eigene Spotify-App nötig) ---
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
+    spotify_token_path: Path = Path("./data/spotify_token.json")
+    spotify_poll_interval: float = 3.0
+
     # --- Sprache (Alpha 1.3, optional: lokale Whisper-STT + Piper-TTS) ---
     #: Piper-Sprachmodell (.onnx-Datei); ``None`` = TTS bleibt aus, Frontend
     #: fällt automatisch auf die Browser-Stimme zurück. Modelle:
@@ -141,6 +147,10 @@ class Config:
             google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
             google_token_path=_resolve_path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
             google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
+            spotify_client_id=_get("SPOTIFY_CLIENT_ID", ""),
+            spotify_client_secret=_get("SPOTIFY_CLIENT_SECRET", ""),
+            spotify_token_path=_resolve_path(_get("APHELIOS_SPOTIFY_TOKEN_PATH", "./data/spotify_token.json")),
+            spotify_poll_interval=float(_get("APHELIOS_SPOTIFY_POLL_INTERVAL", "3.0")),
             piper_model_path=(
                 _resolve_path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
             ),
@@ -162,6 +172,11 @@ class Config:
     def has_google(self) -> bool:
         """True, sobald ``scripts/google_auth.py`` einmalig erfolgreich lief."""
         return self.google_token_path.exists()
+
+    @property
+    def has_spotify(self) -> bool:
+        """True, sobald ``scripts/spotify_auth.py`` einmalig erfolgreich lief."""
+        return self.spotify_token_path.exists()
 
     @property
     def has_piper(self) -> bool:

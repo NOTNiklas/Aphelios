@@ -132,6 +132,29 @@ class Backend {
     }
   }
 
+  /** Spotify-Wiedergabesteuerung (Play/Pause/Skip/Lautstärke/Like) – reine
+   * Buttons im Musik-Panel, kein Bestätigungsdialog nötig (SAFE-Risikostufe,
+   * siehe MusicEngine). Offline: no-op, es gibt ohne Backend keine
+   * MusicEngine, die reagieren könnte. */
+  musicPlay(): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.play.request" }));
+  }
+  musicPause(): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.pause.request" }));
+  }
+  musicNext(): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.next.request" }));
+  }
+  musicPrevious(): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.previous.request" }));
+  }
+  musicVolume(level: number): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.volume.request", level }));
+  }
+  musicLike(liked: boolean): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "music.like.request", liked }));
+  }
+
   /** Beantwortet eine Sicherheitsabfrage. */
   respondConfirmation(id: string, approve: boolean): void {
     useHud.getState().resolveConfirmation(id);
@@ -243,6 +266,12 @@ export const backend = new Backend();
 const backendApi = {
   sendChat: (text: string) => backend.sendChat(text),
   completeStep: (index: number) => backend.completeStep(index),
+  musicPlay: () => backend.musicPlay(),
+  musicPause: () => backend.musicPause(),
+  musicNext: () => backend.musicNext(),
+  musicPrevious: () => backend.musicPrevious(),
+  musicVolume: (level: number) => backend.musicVolume(level),
+  musicLike: (liked: boolean) => backend.musicLike(liked),
   respondConfirmation: (id: string, approve: boolean) => backend.respondConfirmation(id, approve),
   requestVoiceAudio: (text: string) => backend.requestVoiceAudio(text),
   requestTranscription: (audioBase64: string) => backend.requestTranscription(audioBase64),

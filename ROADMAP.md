@@ -217,12 +217,25 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   eigene Entwickler-Zugangsdaten/OAuth-Einrichtung, die der Nutzer selbst
   anlegen müsste; Entscheidung, ob/welcher Dienst zuerst, liegt beim Nutzer
 
+## Alpha 1.8 — Musik (Spotify)-Steuerung
+
+- ✅ **MusicEngine** – zeigt den aktuell laufenden Song (Titel, Interpret,
+  Album-Cover, Fortschritt) und steuert die Wiedergabe: Play/Pause/Skip/
+  Lautstärke/„Gefällt mir" – kreisförmiges Musik-Panel im HUD (rotierendes
+  Cover + Fortschritts-Ring), siehe `docs/integrations.md#spotify-einrichten`,
+  `docs/engines.md`. Ursprünglich für Beta geplant, vorgezogen, weil die
+  Grundarbeit (OAuth-Muster, Poll-Engine, Panel-Konventionen) durch
+  Wetter/Gmail/Kalender bereits stand.
+- Bewusst `RiskLevel.SAFE` statt `CONFIRM` – trivial reversible Aktionen
+  ohne Konsequenz für Dritte, anders als eine gesendete Mail.
+- Wiedergabesteuerung erfordert Spotify Premium (API-Einschränkung); der
+  aktuelle Song wird auch mit einem Free-Account angezeigt.
+
 ---
 
 ## Beta — Betriebssystem-Charakter
 
 - ⬜ AgentEngine: mehrere parallele AI-Agenten
-- ⬜ Music (Spotify)-Steuerung
 - ⬜ Proaktive Routinevorschläge auf Basis der Arbeitsweise
 - ⬜ Backups & Cloud-Sync
 
