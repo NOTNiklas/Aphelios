@@ -537,3 +537,27 @@ OAuth-Login) in
 - Eigenes, schlankes OAuth-Modul (`aphelios/integrations/spotify_auth.py`)
   statt einer SDK-Abhängigkeit – Spotifys Authorization-Code-Flow ist ein
   einfacher REST-Aufruf, den `httpx` (Basis-Abhängigkeit) direkt kann.
+
+## Engines nach Alpha 1.8 (StockEngine: Trading-Dashboard)
+
+### StockEngine (real, sofort aktiv, kein API-Key)
+Pollt eine konfigurierbare Aktien-Watchlist (`stock.update`) fürs
+Trading-Dashboard-Popup im HUD und beantwortet Ad-hoc-Kursfragen zu
+EINEM beliebigen Symbol – `/aktie <Symbol>` im Chat oder Claudes Werkzeug
+`get_stock_quote`.
+
+- Nutzt Yahoo Finances öffentlichen Chart-Endpunkt (`query1.finance.yahoo.com`)
+  – kein API-Key, kein Vertrag, dieselbe Datenquelle wie die verbreitete
+  `yfinance`-Bibliothek. Genau wie die `WeatherEngine` sofort aktiv, keine
+  Einrichtung nötig.
+- Bewusst KEINE Firmenname-zu-Symbol-Auflösung ("Apple" → "AAPL") – Claude
+  kennt gängige Ticker selbst und füllt sie beim Werkzeug-Aufruf aus; der
+  Slash-Befehl erwartet das Symbol direkt (wie `/oeffne` einen
+  Programmnamen direkt erwartet statt ihn zu erraten).
+- Das Trading-Dashboard selbst (Popup über den „TRADING"-Button in der
+  TopBar) zeigt links die Watchlist, rechts einen echten TradingView-Chart
+  für das ausgewählte Symbol – TradingViews offizielles, kostenloses
+  Embed-Widget. Der Chart braucht KEIN Backend (lädt direkt von
+  TradingView); nur die Watchlist-Zeilen kommen von der StockEngine.
+- Kein `RiskLevel`-Handling nötig – reines Lesen, keine Wiedergabe-/
+  Schreibsteuerung wie bei MusicEngine/MailEngine.

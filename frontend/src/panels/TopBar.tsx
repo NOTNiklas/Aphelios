@@ -31,6 +31,14 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-3 sm:gap-6">
+        <button
+          type="button"
+          onClick={() => useHud.getState().setTradingOpen(true)}
+          className="rounded border border-hud-neon/30 px-2.5 py-1 font-hud text-[11px] tracking-[0.25em] text-hud-neon/70 hover:border-hud-neon/60 hover:text-hud-neon"
+          title="Trading-Dashboard öffnen"
+        >
+          TRADING
+        </button>
         <span className="hidden font-hud text-[11px] tracking-[0.3em] text-hud-neon/60 md:inline">
           AI: {ai === "claude" ? "CLAUDE" : "FALLBACK"}
         </span>

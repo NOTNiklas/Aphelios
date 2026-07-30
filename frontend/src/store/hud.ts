@@ -10,6 +10,7 @@ import type {
   MailData,
   MusicData,
   PlanData,
+  StockData,
   SystemStats,
   WeatherData,
 } from "../lib/types";
@@ -21,6 +22,9 @@ interface HudState {
   mail: MailData | null;
   calendar: CalendarData | null;
   music: MusicData | null;
+  stocks: StockData | null;
+  /** Trading-Dashboard-Popup geöffnet? (TopBar-Button, siehe TradingDashboard.tsx). */
+  tradingOpen: boolean;
   /** Aktueller Plan (PlanningEngine, ausgelöst über "/plan <Aufgabe>"). */
   plan: PlanData | null;
   engines: Record<string, string>;
@@ -37,6 +41,7 @@ interface HudState {
 
   // -- Aktionen (vom Transport / UI aufgerufen) --
   setLink: (link: Link) => void;
+  setTradingOpen: (open: boolean) => void;
   setListening: (listening: boolean) => void;
   setSpeaking: (speaking: boolean) => void;
   setSpeakerOn: (on: boolean) => void;
@@ -52,6 +57,8 @@ export const useHud = create<HudState>((set) => ({
   mail: null,
   calendar: null,
   music: null,
+  stocks: null,
+  tradingOpen: false,
   plan: null,
   engines: {},
   ai: "fallback",
@@ -68,6 +75,7 @@ export const useHud = create<HudState>((set) => ({
   speakerOn: false,
 
   setLink: (link) => set({ link }),
+  setTradingOpen: (open) => set({ tradingOpen: open }),
   setListening: (listening) => set({ listening }),
   setSpeaking: (speaking) => set({ speaking }),
   setSpeakerOn: (on) => set({ speakerOn: on }),
@@ -95,6 +103,9 @@ export const useHud = create<HudState>((set) => ({
 
         case "music.update":
           return { music: msg.data as unknown as MusicData };
+
+        case "stock.update":
+          return { stocks: msg.data as unknown as StockData };
 
         case "plan.update":
           return { plan: msg.data as unknown as PlanData };

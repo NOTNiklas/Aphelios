@@ -48,6 +48,7 @@ separate UI nötig):
 | `/dokument <Pfad> [Frage]` | Liest Word/Excel/PowerPoint/PDF und beantwortet Fragen dazu – mit Bestätigung |
 | `/mail-senden <An> \| <Betreff> \| <Text>` | Sendet eine Gmail-Mail – mit Bestätigung |
 | `/termin-anlegen <Titel> \| <Start> \| <Dauer>` | Legt einen Kalender-Termin an – mit Bestätigung |
+| `/aktie <Symbol>` | Aktueller Kurs eines Börsensymbols, z. B. `/aktie AAPL` (kein Firmenname) |
 | `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
@@ -73,6 +74,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Wetter** | ✅ Real | Open-Meteo, kein API-Key nötig |
 | **Gmail / Kalender** | ✅ Real, optional (lesend + Alpha-1.7-Schreibzugriff) | `/mail-senden`, `/termin-anlegen` – immer mit Bestätigung; eigener Google-OAuth-Client nötig, siehe [`docs/integrations.md`](./docs/integrations.md) |
 | **Musik (Spotify)** | ✅ Real, optional (Alpha 1.8) | Zeigt aktuellen Song (Titel, Cover, Fortschritt), steuert Play/Pause/Skip/Lautstärke/„Gefällt mir" – eigene Spotify-App nötig, siehe [`docs/integrations.md`](./docs/integrations.md#spotify-einrichten) |
+| **Trading-Dashboard (Aktien)** | ✅ Real, sofort aktiv | Popup über den „TRADING"-Button: Watchlist mit echten Kursen (Yahoo Finance, kein Key nötig) + eingebetteter TradingView-Chart; `/aktie <Symbol>` bzw. Claude-Werkzeug beantworten Kursfragen im Chat |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
 | **Event-Bus & Engine-Manager** | ✅ Real | Ereignisgesteuerte Kommunikation zwischen unabhängigen Engines |
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |

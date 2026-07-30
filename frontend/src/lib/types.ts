@@ -75,6 +75,23 @@ export interface MusicData {
   updated_at: number;
 }
 
+/** Ein einzelner Aktienkurs (StockEngine, kein API-Key nötig). */
+export interface StockQuote {
+  symbol: string;
+  name: string;
+  price: number;
+  currency: string;
+  change: number | null;
+  change_percent: number | null;
+}
+
+/** Watchlist-Push fürs Trading-Dashboard. */
+export interface StockData {
+  quotes?: StockQuote[];
+  error?: string;
+  updated_at: number;
+}
+
 export interface ConfirmationRequest {
   id: string;
   action: string;

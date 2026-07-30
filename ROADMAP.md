@@ -242,13 +242,17 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 ## Langfristige Vision
 
 - ✅ Handy-Zugriff als PWA (heute nutzbar, gleiches WLAN – `docs/integrations.md`)
+- ✅ **Trading-Dashboard** – Popup über den „TRADING"-Button: Watchlist mit
+  echten Kursen (StockEngine, Yahoo Finance, kein Key nötig) + eingebetteter
+  TradingView-Chart; `/aktie <Symbol>` bzw. Claude-Werkzeug beantworten
+  Kursfragen im Chat. Vorgezogen aus dieser Liste, siehe `docs/engines.md`.
 - ⬜ Native Handy-App (eigenständiges Projekt: Termine/Mails aktiv verwalten,
   Push-Benachrichtigungen, Hintergrund-Sync)
 - ⬜ Smart Home / Home Assistant
 - ⬜ Lokale LLMs als Standard
 - ⬜ Web-Dashboard
 - ⬜ Multi-PC-Synchronisation, NAS, Raspberry-Pi-Nodes
-- ⬜ CAD-/3D-Unterstützung, KI-Code-Reviews, Trading-Dashboard
+- ⬜ CAD-/3D-Unterstützung, KI-Code-Reviews
 
 ---
 

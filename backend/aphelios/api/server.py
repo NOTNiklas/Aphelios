@@ -41,6 +41,7 @@ BROADCAST_TOPICS = [
     "calendar.update",
     "plan.update",
     "music.update",
+    "stock.update",
     "voice.audio",
     "voice.transcript",
     "voice.error",
@@ -59,6 +60,7 @@ REPLAYABLE_TOPICS = [
     "calendar.update",
     "plan.update",
     "music.update",
+    "stock.update",
 ]
 
 
@@ -220,6 +222,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/dokument ": ("office.request", "text", {}),
     "/mail-senden ": ("mail.send.request", "text", {}),
     "/termin-anlegen ": ("calendar.create.request", "text", {}),
+    "/aktie ": ("stock.quote.request", "symbol", {}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
@@ -256,6 +259,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/dokument <Pfad> [Frage]", "Liest Word/Excel/PowerPoint/PDF und beantwortet Fragen dazu – mit Bestätigung"),
     ("/mail-senden <An> | <Betreff> | <Text>", "Sendet eine Gmail-Mail – mit Bestätigung"),
     ("/termin-anlegen <Titel> | <Start JJJJ-MM-TT HH:MM> | <Dauer in Min.>", "Legt einen Kalender-Termin an – mit Bestätigung"),
+    ("/aktie <Symbol>", "Aktueller Kurs eines Börsensymbols, z. B. \"/aktie AAPL\" (kein Firmenname)"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 

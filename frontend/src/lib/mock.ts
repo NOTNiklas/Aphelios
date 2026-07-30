@@ -55,6 +55,16 @@ export const MOCK_MUSIC = {
   is_playing: true,
 };
 
+/** Vorschau-Watchlist fürs Trading-Dashboard, solange das Backend offline
+ * ist oder noch keinen ersten Poll-Zyklus hatte. */
+export const MOCK_STOCKS = [
+  { symbol: "AAPL", name: "Apple Inc.", price: 338.19, currency: "USD", change: -1.89, change_percent: -0.56 },
+  { symbol: "MSFT", name: "Microsoft Corporation", price: 390.54, currency: "USD", change: -2.81, change_percent: -0.71 },
+  { symbol: "GOOGL", name: "Alphabet Inc.", price: 336.71, currency: "USD", change: 3.0, change_percent: 0.9 },
+  { symbol: "AMZN", name: "Amazon.com, Inc.", price: 226.65, currency: "USD", change: -4.21, change_percent: -1.82 },
+  { symbol: "TSLA", name: "Tesla, Inc.", price: 298.32, currency: "USD", change: -9.12, change_percent: -2.97 },
+];
+
 /** Eine Fallback-Antwort, die zeichenweise „gestreamt" wird. */
 export function mockReply(text: string): string {
   const t = text.toLowerCase();

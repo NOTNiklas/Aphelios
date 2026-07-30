@@ -9,6 +9,7 @@ import { InfoPanels } from "./panels/InfoPanels";
 import { Tasks } from "./panels/Tasks";
 import { Console } from "./panels/Console";
 import { ConfirmDialog } from "./panels/ConfirmDialog";
+import { TradingDashboard } from "./panels/TradingDashboard";
 import { TopBar } from "./panels/TopBar";
 import { useHud } from "./store/hud";
 
@@ -74,6 +75,9 @@ export default function App() {
 
       {/* Sicherheits-Bestätigungen */}
       <ConfirmDialog />
+
+      {/* Trading-Dashboard-Popup */}
+      <TradingDashboard />
     </div>
   );
 }

@@ -57,7 +57,7 @@ Du hast Zugriff auf Werkzeuge, mit denen du tatsächlich etwas auf dem PC \
 des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Code schreiben, \
 Programm öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, \
 Bildschirm ansehen/lesen, Webseite öffnen, Office-Dokument/PDF lesen, Mail \
-senden, Termin anlegen). Nutze ein Werkzeug NUR, wenn die Anfrage \
+senden, Termin anlegen, Aktienkurs abfragen). Nutze ein Werkzeug NUR, wenn die Anfrage \
 eindeutig danach verlangt ("was hab ich mir zu X notiert" → Vault \
 durchsuchen, "öffne Spotify" → Programm öffnen) – bei normalem Geplauder \
 oder allgemeinen Fragen antwortest du direkt, ohne Werkzeug. Rufst du ein \
@@ -256,6 +256,20 @@ _TOOLS: list[dict] = [
             "required": ["title", "start", "duration_minutes"],
         },
     },
+    {
+        "name": "get_stock_quote",
+        "description": (
+            "Ruft den aktuellen Kurs einer Aktie/eines Wertpapiers ab. Das "
+            "Symbol/Ticker angeben (z. B. 'AAPL' für Apple, 'TSLA' für "
+            "Tesla), NICHT den Firmennamen – bei bekannten Firmen das "
+            "übliche Börsensymbol selbst ableiten."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"symbol": {"type": "string", "description": "Börsensymbol, z. B. 'AAPL'."}},
+            "required": ["symbol"],
+        },
+    },
 ]
 
 
@@ -315,6 +329,8 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         start = tool_input.get("start", "")
         duration = tool_input.get("duration_minutes", "")
         return "calendar.create.request", {"text": f"{title} | {start} | {duration}"}
+    if name == "get_stock_quote":
+        return "stock.quote.request", {"symbol": tool_input.get("symbol", "")}
     return None
 
 

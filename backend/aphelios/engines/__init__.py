@@ -12,6 +12,7 @@ from aphelios.engines.planning_engine import PlanningEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.knowledge_engine import KnowledgeEngine
 from aphelios.engines.office_engine import OfficeEngine
+from aphelios.engines.stock_engine import StockEngine
 from aphelios.engines.stubs import AgentEngine
 from aphelios.engines.system_engine import SystemEngine
 from aphelios.engines.vision_engine import VisionEngine
@@ -29,6 +30,7 @@ ALL_ENGINES = [
     MailEngine,
     CalendarEngine,
     MusicEngine,
+    StockEngine,
     ReasoningEngine,
     PlanningEngine,
     AutomationEngine,

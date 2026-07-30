@@ -84,6 +84,14 @@ class Config:
     google_token_path: Path = Path("./data/google_token.json")
     google_poll_interval: float = 300.0
 
+    # --- Aktien (StockEngine, kein API-Key nötig – Yahoo-Finance-Chart-Endpunkt) ---
+    #: Komma-getrennte Watchlist für das Trading-Dashboard (Ticker-Symbole,
+    #: keine Firmennamen). Ad-hoc-Anfragen (Slash-Befehl/Claude-Werkzeug)
+    #: sind davon unabhängig – jedes Symbol funktioniert, nicht nur die hier
+    #: gelisteten.
+    stock_symbols: str = "AAPL,MSFT,GOOGL,AMZN,TSLA"
+    stock_poll_interval: float = 60.0
+
     # --- Spotify (MusicEngine, eigene Spotify-App nötig) ---
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
@@ -147,6 +155,8 @@ class Config:
             google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
             google_token_path=_resolve_path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
             google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
+            stock_symbols=_get("APHELIOS_STOCK_SYMBOLS", "AAPL,MSFT,GOOGL,AMZN,TSLA"),
+            stock_poll_interval=float(_get("APHELIOS_STOCK_POLL_INTERVAL", "60")),
             spotify_client_id=_get("SPOTIFY_CLIENT_ID", ""),
             spotify_client_secret=_get("SPOTIFY_CLIENT_SECRET", ""),
             spotify_token_path=_resolve_path(_get("APHELIOS_SPOTIFY_TOKEN_PATH", "./data/spotify_token.json")),
