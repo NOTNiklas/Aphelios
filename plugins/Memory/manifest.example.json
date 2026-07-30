@@ -1,0 +1,11 @@
+{
+  "name": "obsidian-sync",
+  "version": "0.1.0",
+  "category": "Memory",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Synchronisiert Notizen mit dem Obsidian-Vault.",
+  "permissions": [
+    "filesystem"
+  ],
+  "enabled": false
+}

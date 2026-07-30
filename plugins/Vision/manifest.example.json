@@ -1,0 +1,11 @@
+{
+  "name": "screen-ocr",
+  "version": "0.1.0",
+  "category": "Vision",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "OCR und Bildschirm-Verständnis (Tesseract/OpenCV).",
+  "permissions": [
+    "screen"
+  ],
+  "enabled": false
+}

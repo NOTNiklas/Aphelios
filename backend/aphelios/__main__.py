@@ -25,6 +25,12 @@ def run() -> None:
         format="%(asctime)s  %(levelname)-7s  %(name)s  %(message)s",
         datefmt="%H:%M:%S",
     )
+    # httpx protokolliert sonst JEDEN HTTP-Request auf INFO-Niveau – bei
+    # kurzen Poll-Intervallen (MusicEngine: alle paar Sekunden) spammt das
+    # die Konsole zu, ohne einen eigenen Erkenntniswert zu haben (unsere
+    # Engines loggen Fehler/Zustandswechsel bereits selbst). Echte Probleme
+    # (Verbindungsfehler etc.) bleiben ab WARNING weiterhin sichtbar.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     banner(config)
     app = create_app(config)
     uvicorn.run(app, host=config.api_host, port=config.api_port, log_level="warning")

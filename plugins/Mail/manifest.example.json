@@ -1,0 +1,11 @@
+{
+  "name": "mail-composer",
+  "version": "0.1.0",
+  "category": "Mail",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Schreibt und beantwortet E-Mails.",
+  "permissions": [
+    "network"
+  ],
+  "enabled": false
+}

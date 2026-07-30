@@ -21,9 +21,37 @@ try:  # dotenv ist optional, aber empfohlen
 except ImportError:  # pragma: no cover
     pass
 
+#: Backend-Wurzel (core/ -> aphelios/ -> backend/, zwei Ebenen über dieser
+#: Datei) – fester Anker für relative Pfade aus der .env (Vault, SQLite-Index,
+#: Google-Token). Das Backend lässt sich auf mehrere Arten starten (Terminal
+#: mit `cd backend`, `run.bat`, eine IDE-Run-Konfiguration, …), jede mit
+#: potenziell anderem Arbeitsverzeichnis. Ohne diesen festen Anker würde z. B.
+#: ein einmal per `scripts/google_auth.py` erzeugtes google_token.json je nach
+#: Startart an unterschiedlichen, cwd-abhängigen Stellen gesucht – Gmail/
+#: Kalender wirken dann "kaputt", obwohl an der Anmeldung selbst nichts falsch
+#: ist. Absolute Pfade (z. B. ein Windows-Laufwerkspfad) bleiben unverändert.
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _resolve_path(value: str) -> Path:
+    """Löst einen Pfad aus der .env auf: relativ wird gegen ``BACKEND_ROOT``
+    verankert statt gegen das aktuelle Arbeitsverzeichnis, absolut bleibt
+    absolut."""
+    path = Path(value)
+    return path if path.is_absolute() else BACKEND_ROOT / path
+
 
 def _get(name: str, default: str) -> str:
-    return os.environ.get(name, default)
+    """Liest eine Umgebungsvariable und entfernt umschließende Leer-/Anführungszeichen.
+
+    Häufiger Stolperstein: ``KEY= wert`` (Leerzeichen nach dem ``=``) oder
+    ``KEY="wert"`` machen z. B. einen API-Key sonst unbemerkt ungültig – die
+    Anfrage schlägt dann fehl und die App fällt lautlos in den Fallback-Modus.
+    """
+    value = os.environ.get(name, default).strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1].strip()
+    return value
 
 
 @dataclass(slots=True)
@@ -46,6 +74,67 @@ class Config:
     # --- System-Monitoring ---
     stats_interval: float = 2.0
 
+    # --- Wetter (Open-Meteo, kein API-Key nötig) ---
+    weather_city: str = "Berlin"
+    weather_interval: float = 900.0
+
+    # --- Google (Gmail + Kalender, eigener OAuth-Client nötig) ---
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_token_path: Path = Path("./data/google_token.json")
+    google_poll_interval: float = 300.0
+
+    # --- Aktien (StockEngine, kein API-Key nötig – Yahoo-Finance-Chart-Endpunkt) ---
+    #: Komma-getrennte Watchlist für das Trading-Dashboard (Ticker-Symbole,
+    #: keine Firmennamen). Ad-hoc-Anfragen (Slash-Befehl/Claude-Werkzeug)
+    #: sind davon unabhängig – jedes Symbol funktioniert, nicht nur die hier
+    #: gelisteten.
+    stock_symbols: str = "AAPL,MSFT,GOOGL,AMZN,TSLA"
+    stock_poll_interval: float = 60.0
+    #: Intervall (Stunden) für die geplante Investment-Committee-Recherche
+    #: über die Watchlist (ResearchEngine) – läuft einmal kurz nach dem
+    #: Start, danach in diesem Rhythmus. Nur aktiv mit ANTHROPIC_API_KEY.
+    research_interval_hours: float = 24.0
+
+    # --- Spotify (MusicEngine, eigene Spotify-App nötig) ---
+    spotify_client_id: str = ""
+    spotify_client_secret: str = ""
+    spotify_token_path: Path = Path("./data/spotify_token.json")
+    #: 15s statt knapper bemessen, um Spotifys Anfrage-Kontingent zu schonen
+    #: (429 QUOTA_EXCEEDED) – das Musik-Panel interpoliert Fortschritt/Ring
+    #: clientseitig zwischen den Updates weiter, braucht also kein enges
+    #: Poll-Intervall für eine flüssige Anzeige (siehe frontend/src/panels/Music.tsx).
+    spotify_poll_interval: float = 15.0
+
+    # --- Sprache (Alpha 1.3, optional: lokale Whisper-STT + Piper-TTS) ---
+    #: Piper-Sprachmodell (.onnx-Datei); ``None`` = TTS bleibt aus, Frontend
+    #: fällt automatisch auf die Browser-Stimme zurück. Modelle:
+    #: https://github.com/rhasspy/piper/blob/master/VOICES.md
+    #: Bewusst ``Path | None`` statt ``Path("")``: ``Path("")`` normalisiert
+    #: sich zu ``Path(".")`` (aktuelles Verzeichnis), das existiert immer –
+    #: eine reine Existenzprüfung würde "nicht konfiguriert" dadurch nie
+    #: erkennen.
+    piper_model_path: Path | None = None
+    #: faster-whisper-Modellgröße ("tiny"/"base"/"small"/"medium"/"large-v3")
+    #: – wird beim ersten Gebrauch automatisch heruntergeladen und lokal
+    #: zwischengespeichert (Hugging Face Hub).
+    whisper_model: str = "base"
+    whisper_device: str = "cpu"
+
+    # --- Vision (Alpha 1.4, optional: Screenshot + OCR + Claude-Vision) ---
+    #: Tesseract-Sprachpakete für die OCR-Erkennung (z. B. "deu+eng" für
+    #: Deutsch+Englisch gemischt). Muss zu den tatsächlich installierten
+    #: `.traineddata`-Sprachpaketen passen, siehe docs/vision.md.
+    ocr_lang: str = "deu+eng"
+
+    # --- Browser (Alpha 1.6, optional: Playwright-gesteuertes Lesen von Seiten) ---
+    #: Standardmäßig unsichtbar (kein Browser-Fenster) – auf dem Windows-
+    #: Desktop kann ``APHELIOS_BROWSER_HEADLESS=false`` gesetzt werden, damit
+    #: der Nutzer sieht, wie APHELIOS die Seite öffnet (JARVIS-artiger
+    #: Effekt). ``headless=True`` bleibt der sichere Standard, u. a. für
+    #: Server-/CI-Umgebungen ohne Anzeige.
+    browser_headless: bool = True
+
     # --- API-Server ---
     api_host: str = "127.0.0.1"
     api_port: int = 8787
@@ -65,9 +154,29 @@ class Config:
             openai_model=_get("APHELIOS_OPENAI_MODEL", "gpt-4o"),
             ollama_host=_get("APHELIOS_OLLAMA_HOST", "http://localhost:11434"),
             ollama_model=_get("APHELIOS_OLLAMA_MODEL", "llama3.1"),
-            vault_path=Path(_get("APHELIOS_VAULT_PATH", "./vault")),
-            db_path=Path(_get("APHELIOS_DB_PATH", "./data/aphelios.sqlite")),
+            vault_path=_resolve_path(_get("APHELIOS_VAULT_PATH", "./vault")),
+            db_path=_resolve_path(_get("APHELIOS_DB_PATH", "./data/aphelios.sqlite")),
             stats_interval=float(_get("APHELIOS_STATS_INTERVAL", "2.0")),
+            weather_city=_get("APHELIOS_WEATHER_CITY", "Berlin"),
+            weather_interval=float(_get("APHELIOS_WEATHER_INTERVAL", "900")),
+            google_client_id=_get("GOOGLE_CLIENT_ID", ""),
+            google_client_secret=_get("GOOGLE_CLIENT_SECRET", ""),
+            google_token_path=_resolve_path(_get("APHELIOS_GOOGLE_TOKEN_PATH", "./data/google_token.json")),
+            google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
+            stock_symbols=_get("APHELIOS_STOCK_SYMBOLS", "AAPL,MSFT,GOOGL,AMZN,TSLA"),
+            stock_poll_interval=float(_get("APHELIOS_STOCK_POLL_INTERVAL", "60")),
+            research_interval_hours=float(_get("APHELIOS_RESEARCH_INTERVAL_HOURS", "24")),
+            spotify_client_id=_get("SPOTIFY_CLIENT_ID", ""),
+            spotify_client_secret=_get("SPOTIFY_CLIENT_SECRET", ""),
+            spotify_token_path=_resolve_path(_get("APHELIOS_SPOTIFY_TOKEN_PATH", "./data/spotify_token.json")),
+            spotify_poll_interval=float(_get("APHELIOS_SPOTIFY_POLL_INTERVAL", "15.0")),
+            piper_model_path=(
+                _resolve_path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
+            ),
+            whisper_model=_get("APHELIOS_WHISPER_MODEL", "base"),
+            whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),
+            ocr_lang=_get("APHELIOS_OCR_LANG", "deu+eng"),
+            browser_headless=_get("APHELIOS_BROWSER_HEADLESS", "true").lower() not in ("false", "0", "no"),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),
@@ -77,3 +186,18 @@ class Config:
     @property
     def has_anthropic(self) -> bool:
         return bool(self.anthropic_api_key)
+
+    @property
+    def has_google(self) -> bool:
+        """True, sobald ``scripts/google_auth.py`` einmalig erfolgreich lief."""
+        return self.google_token_path.exists()
+
+    @property
+    def has_spotify(self) -> bool:
+        """True, sobald ``scripts/spotify_auth.py`` einmalig erfolgreich lief."""
+        return self.spotify_token_path.exists()
+
+    @property
+    def has_piper(self) -> bool:
+        """True, sobald ein Piper-Sprachmodell konfiguriert ist (siehe docs/voice.md)."""
+        return self.piper_model_path is not None and self.piper_model_path.exists()

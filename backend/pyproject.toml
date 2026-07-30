@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aphelios"
-version = "1.0.0a1"
+version = "1.6.0a1"
 description = "APHELIOS – Desktop AI Operating System Assistant (backend)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,13 +17,42 @@ dependencies = [
     "psutil>=5.9",
     "python-dotenv>=1.0",
     "anthropic>=0.40",
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
 # Optional GPU telemetry (NVIDIA). Gracefully skipped if unavailable.
 gpu = ["nvidia-ml-py>=12.535"]
-# Optional local vector memory (future).
+# Semantische Vektorsuche über den Vault (MemoryEngine, Alpha 1.5). Lokale
+# Embeddings (kein API-Key nötig) – das Modell wird beim ersten Gebrauch
+# automatisch heruntergeladen. Ohne dieses Extra (oder falls der einmalige
+# Modell-Download fehlschlägt) fällt memory.search automatisch auf die
+# bisherige SQL-Volltextsuche zurück, siehe docs/engines.md.
 vector = ["chromadb>=0.4"]
+# Gmail + Google Kalender (MailEngine/CalendarEngine). Erfordert eigenen
+# OAuth-Client des Nutzers – siehe docs/integrations.md.
+google = [
+    "google-api-python-client>=2.100",
+    "google-auth-httplib2>=0.2",
+    "google-auth-oauthlib>=1.2",
+]
+# Lokale Sprachein-/ausgabe (VoiceEngine): Piper-TTS + faster-whisper-STT.
+# Braucht zusätzlich ein Piper-Sprachmodell (APHELIOS_PIPER_MODEL_PATH) –
+# siehe docs/voice.md. Whisper-Modelle lädt faster-whisper selbst herunter.
+voice = ["faster-whisper>=1.0", "piper-tts>=1.2"]
+# Bildschirm-Verständnis (VisionEngine): Screenshot + lokale OCR.
+# Braucht zusätzlich das tesseract-Kommandozeilenprogramm im PATH (kein
+# Python-Paket, siehe docs/vision.md) für OCR; Claude-Vision-Beschreibungen
+# (/sieh) brauchen stattdessen nur den ohnehin vorhandenen ANTHROPIC_API_KEY.
+vision = ["mss>=9.0", "pytesseract>=0.3", "Pillow>=10.0"]
+# Lesendes Öffnen von Webseiten (BrowserEngine, Alpha 1.6): Playwright
+# steuert ein echtes Chromium. Braucht zusätzlich einmalig
+# "playwright install chromium" (lädt den Browser selbst, kein pip-Paket),
+# siehe docs/browser.md.
+browser = ["playwright>=1.40"]
+# Lesendes Öffnen von Office-Dokumenten/PDFs (OfficeEngine, Alpha 1.6): Word
+# (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF – siehe docs/office.md.
+office = ["python-docx>=1.0", "openpyxl>=3.1", "python-pptx>=0.6", "pypdf>=4.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
 
 [project.scripts]

@@ -1,0 +1,11 @@
+{
+  "name": "calendar-sync",
+  "version": "0.1.0",
+  "category": "Calendar",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Verwaltet Termine und Erinnerungen.",
+  "permissions": [
+    "network"
+  ],
+  "enabled": false
+}

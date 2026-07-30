@@ -1,0 +1,11 @@
+{
+  "name": "pptx-builder",
+  "version": "0.1.0",
+  "category": "Office",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Erstellt PowerPoint-Präsentationen.",
+  "permissions": [
+    "filesystem"
+  ],
+  "enabled": false
+}

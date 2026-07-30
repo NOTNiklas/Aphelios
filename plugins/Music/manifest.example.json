@@ -1,0 +1,12 @@
+{
+  "name": "spotify-control",
+  "version": "0.1.0",
+  "category": "Music",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Steuert Spotify (Play/Pause/Skip/Lautstärke).",
+  "permissions": [
+    "network",
+    "process"
+  ],
+  "enabled": false
+}

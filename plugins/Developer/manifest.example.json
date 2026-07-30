@@ -1,0 +1,12 @@
+{
+  "name": "git-assistant",
+  "version": "0.1.0",
+  "category": "Developer",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Verwaltet Git-Repositories und Commits.",
+  "permissions": [
+    "process",
+    "filesystem"
+  ],
+  "enabled": false
+}

@@ -1,0 +1,12 @@
+{
+  "name": "tab-control",
+  "version": "0.1.0",
+  "category": "Browser",
+  "entrypoint": "plugin.py:Plugin",
+  "description": "Öffnet und schließt Browser-Tabs (Playwright).",
+  "permissions": [
+    "network",
+    "process"
+  ],
+  "enabled": false
+}

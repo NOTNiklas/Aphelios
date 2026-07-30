@@ -28,8 +28,8 @@ Frontend (HUD)  ──WebSocket──►  API-Server (FastAPI)
                      │
         ┌────────────┼─────────────┬───────────────┐
         ▼            ▼             ▼               ▼
-   SystemEngine  Conversation   Memory      (Voice, Vision,
-   (psutil)      Engine         Engine       Automation … Stubs)
+   SystemEngine  Conversation   Memory      Voice, Vision,
+   (psutil)      Engine         Engine      Automation … (Rest: Stubs)
 ```
 
 ---
@@ -65,7 +65,12 @@ Registriert Engines, startet/stoppt alle gemeinsam und überwacht ihre Tasks.
 
 ### Config (`config.py`)
 Lädt Einstellungen aus Umgebungsvariablen / `.env` (Provider, API-Keys, Vault-Pfad,
-Poll-Intervall, Modell-ID, API-Host/Port). Siehe `.env.example`.
+Poll-Intervall, Modell-ID, API-Host/Port). Siehe `.env.example`. Relative
+Pfade (Vault, SQLite-Index, Google-Token, Piper-Modell) werden fest gegen
+`BACKEND_ROOT` (den `backend`-Ordner) verankert statt gegen das aktuelle
+Arbeitsverzeichnis – das Backend lässt sich auf mehrere Arten starten
+(Terminal, `run.bat`, IDE-Run-Konfiguration, …), jede mit potenziell anderem
+cwd. Absolute Pfade bleiben davon unberührt.
 
 ### SecurityGate (`security.py`)
 Klassifiziert Aktionen und blockiert gefährliche, bis eine Bestätigung vorliegt.
@@ -75,19 +80,23 @@ Details in [`docs/security.md`](./docs/security.md).
 
 ## 3 · Engines (`backend/aphelios/engines/`)
 
-| Engine | Alpha 1.0 | Aufgabe |
+| Engine | Stand | Aufgabe |
 |---|---|---|
 | **SystemEngine** | ✅ real | System-Telemetrie via `psutil`, publisht `system.stats` |
-| **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback) |
-| **MemoryEngine** | ✅ real | Obsidian-Vault-Notizen, SQLite-Index |
-| ReasoningEngine | 🔌 stub | mehrstufiges Schlussfolgern |
-| PlanningEngine | 🔌 stub | Aufgaben in Schritte zerlegen |
-| AutomationEngine | 🔌 stub | PowerShell / pywinauto / Playwright |
-| CodingEngine | 🔌 stub | Code schreiben/refactoren |
-| BrowserEngine | 🔌 stub | Browser-Steuerung |
-| KnowledgeEngine | 🔌 stub | Wissensabruf / RAG |
-| VisionEngine | 🔌 stub | OCR, Bildschirm-Verständnis |
-| VoiceEngine | 🔌 stub | Whisper STT + hochwertige TTS |
+| **ConversationEngine** | ✅ real | Dialog über Claude API (+ Fallback), persistenter Kontext über MemoryEngine |
+| **MemoryEngine** | ✅ real (Vektorsuche seit Alpha 1.5) | Obsidian-Vault-Notizen mit automatischer Verlinkung; semantische Suche über ChromaDB mit automatischem Volltext-Fallback (Titel/Inhalt/Tags) + generischer KV-Store |
+| **WeatherEngine** | ✅ real | Echtes Wetter via Open-Meteo (kein API-Key) |
+| **MailEngine** | ✅ real, optional | Gmail lesen + senden (Alpha 1.7, `/mail-senden`), eigener Google-OAuth-Client nötig |
+| **CalendarEngine** | ✅ real, optional | Google-Kalender-Termine lesen + anlegen (Alpha 1.7, `/termin-anlegen`), dieselbe Anmeldung |
+| **ReasoningEngine** | ✅ real (Alpha 1.1) | Mehrstufige Analyse + sichtbare Werkzeug-Auswahl (`/denke`) |
+| **PlanningEngine** | ✅ real (Alpha 1.1) | Aufgabe → Schritte, echtes Aufgaben-Panel (`/plan`) |
+| **AutomationEngine** | ✅ real, erste Ausbaustufe (Alpha 1.2) | PowerShell, Datei-Operationen, Programme starten/schließen – alles über SecurityGate (`/run`, `/oeffne`, `/schliesse`, `/loesche`, `/downloads`) |
+| **VoiceEngine** | ✅ real, optional (Alpha 1.3) | Piper-TTS + faster-whisper-STT lokal, `voice.speak`/`voice.transcribe` |
+| **VisionEngine** | ✅ real, erste Ausbaustufe (Alpha 1.4) | Screenshot + OCR + Claude Vision, alles über SecurityGate (`/sieh`, `/lies`, `/fehler`) |
+| **KnowledgeEngine** | ✅ real (Alpha 1.5) | RAG ausschließlich über den Obsidian-Vault, mit Quellenangabe (`/wissen`) |
+| **BrowserEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Playwright-gesteuertes Lesen von Webseiten, über SecurityGate (`/browse`) |
+| **CodingEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Code schreiben/erklären über Claude, nur im Chat (`/code`) |
+| **OfficeEngine** | ✅ real, erste Ausbaustufe (Alpha 1.6) | Word/Excel/PowerPoint/PDF lesen, über SecurityGate (`/dokument`) |
 | AgentEngine | 🔌 stub | mehrere parallele AI-Agenten |
 
 Alle Stubs erben von `BaseEngine`, besitzen die vollständige Methoden-Signatur und
