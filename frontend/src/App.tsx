@@ -44,12 +44,14 @@ export default function App() {
 
           {/* Linke Spalte: System + Aufgaben (von APHELIOS selbst erzeugt,
               deshalb getrennt von den externen Datenquellen rechts).
-              inset-y statt top-1/2/-translate-y-1/2, damit die Spalte auf die
-              zwischen TopBar und Konsole verfügbare Höhe begrenzt bleibt: bei
-              wenig Platz (kleine Fenster/Laptop-Displays) scrollt sie intern,
-              statt TopBar/Konsole zu überlappen. Zentrierung über m-auto statt
-              justify-center: justify-center würde bei zu großem Inhalt "unsafe"
-              zentrieren und den oberen Teil über den Rand hinaus unerreichbar
+              inset-y bindet die Spalte an die volle Höhe von `main` – die
+              Konsole liegt jetzt als eigenes Overlay UNTEN drüber (siehe
+              unten) statt als normales Flex-Geschwister, das `main` bei
+              wachsendem Chat-Verlauf zusammenstauchen würde. Die Spalten
+              ziehen sich dadurch immer bis nach unten durch, unabhängig von
+              der Konsolen-Höhe. Zentrierung über m-auto statt justify-center:
+              justify-center würde bei zu großem Inhalt "unsafe" zentrieren
+              und den oberen Teil über den Rand hinaus unerreichbar
               verschieben – m-auto zentriert nur, wenn Platz ist, und rutscht
               sonst sauber scrollbar nach oben. */}
           <div className="absolute inset-y-4 left-6 hidden overflow-y-auto lg:flex lg:flex-col">
@@ -65,12 +67,17 @@ export default function App() {
               <InfoPanels />
             </div>
           </div>
-        </main>
 
-        {/* Untere Konsole */}
-        <div className="px-4 pb-4">
-          <Console />
-        </div>
+          {/* Untere Konsole – bewusst als Overlay (absolute) statt normales
+              Flex-Geschwister von `main`: wächst der Chat-Verlauf, soll das
+              NICHT die Höhe von `main` schrumpfen (das hat vorher die
+              Seitenspalten zusammengestaucht/abgeschnitten). Horizontal
+              zentriert und schmaler als der Bildschirm, deshalb praktisch
+              keine Überlappung mit den Seitenspalten an den Rändern. */}
+          <div className="absolute inset-x-0 bottom-4 px-4">
+            <Console />
+          </div>
+        </main>
       </div>
 
       {/* Sicherheits-Bestätigungen */}
