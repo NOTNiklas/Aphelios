@@ -100,7 +100,11 @@ class Config:
     spotify_client_id: str = ""
     spotify_client_secret: str = ""
     spotify_token_path: Path = Path("./data/spotify_token.json")
-    spotify_poll_interval: float = 3.0
+    #: 15s statt knapper bemessen, um Spotifys Anfrage-Kontingent zu schonen
+    #: (429 QUOTA_EXCEEDED) – das Musik-Panel interpoliert Fortschritt/Ring
+    #: clientseitig zwischen den Updates weiter, braucht also kein enges
+    #: Poll-Intervall für eine flüssige Anzeige (siehe frontend/src/panels/Music.tsx).
+    spotify_poll_interval: float = 15.0
 
     # --- Sprache (Alpha 1.3, optional: lokale Whisper-STT + Piper-TTS) ---
     #: Piper-Sprachmodell (.onnx-Datei); ``None`` = TTS bleibt aus, Frontend
@@ -165,7 +169,7 @@ class Config:
             spotify_client_id=_get("SPOTIFY_CLIENT_ID", ""),
             spotify_client_secret=_get("SPOTIFY_CLIENT_SECRET", ""),
             spotify_token_path=_resolve_path(_get("APHELIOS_SPOTIFY_TOKEN_PATH", "./data/spotify_token.json")),
-            spotify_poll_interval=float(_get("APHELIOS_SPOTIFY_POLL_INTERVAL", "3.0")),
+            spotify_poll_interval=float(_get("APHELIOS_SPOTIFY_POLL_INTERVAL", "15.0")),
             piper_model_path=(
                 _resolve_path(_raw_piper) if (_raw_piper := _get("APHELIOS_PIPER_MODEL_PATH", "")) else None
             ),

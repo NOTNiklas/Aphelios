@@ -51,6 +51,12 @@ _API_BASE = "https://api.spotify.com/v1"
 #: Button wirkt.
 _POST_ACTION_DELAY = 0.4
 
+#: Pause-Dauer bei einem 429 ohne verwertbaren ``Retry-After``-Header.
+#: Spotifys "QUOTA_EXCEEDED" ist kein kurzer Burst-Limiter, sondern ein
+#: Kontingent über einen längeren Zeitraum – ein paar Sekunden Pause würde
+#: sofort wieder gegen dasselbe Limit laufen, deshalb bewusst eine Minute.
+_DEFAULT_RATE_LIMIT_BACKOFF = 60.0
+
 
 class MusicEngine(BaseEngine):
     """Ruft periodisch den aktuell gespielten Spotify-Song ab und steuert
@@ -61,6 +67,13 @@ class MusicEngine(BaseEngine):
     async def start(self) -> None:
         self._running = True
         self._client = httpx.AsyncClient(timeout=10.0)
+        # Rate-Limit-Backoff (429) – siehe _apply_rate_limit(). Liked-Cache
+        # spart den zusätzlichen /me/tracks/contains-Aufruf, solange sich
+        # der Song nicht geändert hat (größter Einzel-Verbraucher des
+        # API-Kontingents neben dem eigentlichen Poll).
+        self._backoff_until = 0.0
+        self._last_track_id: str | None = None
+        self._last_liked: bool | None = None
         self.bus.subscribe("music.play.request", self._handle_play)
         self.bus.subscribe("music.pause.request", self._handle_pause)
         self.bus.subscribe("music.next.request", self._handle_next)
@@ -103,7 +116,23 @@ class MusicEngine(BaseEngine):
         token = await load_access_token(self.config, self._client)
         return {"Authorization": f"Bearer {token}"}
 
+    def _apply_rate_limit(self, resp: httpx.Response) -> None:
+        """Merkt sich eine Backoff-Frist aus dem ``Retry-After``-Header (RFC
+        7231, Sekunden) – ohne verwertbaren Header eine Minute Pause. Der
+        Poll-Loop überspringt bis dahin JEDEN weiteren Spotify-Aufruf statt
+        gegen dasselbe Kontingent weiterzulaufen."""
+        retry_after = resp.headers.get("Retry-After")
+        try:
+            wait = float(retry_after) if retry_after else _DEFAULT_RATE_LIMIT_BACKOFF
+        except ValueError:
+            wait = _DEFAULT_RATE_LIMIT_BACKOFF
+        self._backoff_until = time.time() + max(wait, 1.0)
+        self.log.warning("Spotify-Rate-Limit erreicht – pausiere %.0fs", wait)
+
     async def _refresh(self) -> None:
+        if time.time() < self._backoff_until:
+            return  # aktiver Backoff – kein weiterer Aufruf, keine Fehler-Wiederholung
+
         try:
             headers = await self._auth_headers()
         except SpotifyAuthError as exc:
@@ -111,6 +140,14 @@ class MusicEngine(BaseEngine):
             return
 
         resp = await self._client.get(f"{_API_BASE}/me/player", headers=headers)
+
+        if resp.status_code == 429:
+            self._apply_rate_limit(resp)
+            await self.emit(
+                "music.update",
+                {"error": "Spotify-Kontingent erreicht – pausiere kurz.", "updated_at": time.time()},
+            )
+            return
 
         if resp.status_code == 204 or not resp.content:
             await self.emit(
@@ -146,9 +183,12 @@ class MusicEngine(BaseEngine):
         device = payload.get("device") or {}
         track_id = item.get("id")
 
-        liked: bool | None = None
-        if track_id:
-            liked = await self._is_liked(track_id, headers)
+        if track_id != self._last_track_id:
+            liked = await self._is_liked(track_id, headers) if track_id else None
+            self._last_track_id = track_id
+            self._last_liked = liked
+        else:
+            liked = self._last_liked
 
         return {
             "connected": True,
@@ -184,6 +224,14 @@ class MusicEngine(BaseEngine):
             return
 
         resp = await self._client.request(method, f"{_API_BASE}{path}", headers=headers, **kwargs)
+
+        if resp.status_code == 429:
+            self._apply_rate_limit(resp)
+            await self.emit(
+                "music.update",
+                {"error": "Spotify-Kontingent erreicht – pausiere kurz.", "updated_at": time.time()},
+            )
+            return
 
         if resp.status_code not in (200, 202, 204):
             body = resp.text
