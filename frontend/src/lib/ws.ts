@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 import { useHud } from "../store/hud";
 import { mockReply, mockStatsMessage } from "./mock";
-import type { BusMessage } from "./types";
+import type { BusMessage, RecentNote } from "./types";
 
 const WS_URL = `ws://${location.hostname}:8787/ws`;
 const RECONNECT_MS = 4000;
@@ -70,7 +70,12 @@ class Backend {
     this.ws.onmessage = (ev) => {
       try {
         const msg = JSON.parse(ev.data) as BusMessage;
-        if (msg.topic === "voice.audio" || msg.topic === "voice.transcript" || msg.topic === "voice.error") {
+        if (
+          msg.topic === "voice.audio" ||
+          msg.topic === "voice.transcript" ||
+          msg.topic === "voice.error" ||
+          msg.topic === "memory.recent.result"
+        ) {
           this.resolveVoiceWaiter(msg);
           return; // Antwort auf eine gezielte Anfrage, kein globaler Store-Zustand nötig.
         }
@@ -173,6 +178,28 @@ class Backend {
     resolve(msg);
   }
 
+  /** Holt die zuletzt erzeugten Vault-Notizen (Aktivitäts-Feed im
+   * Web-Dashboard). Leere Liste bei Timeout/Offline statt eines Fehlers –
+   * das Dashboard zeigt dann einfach "keine Aktivität". */
+  requestRecentNotes(limit = 15, timeoutMs = 5000): Promise<RecentNote[]> {
+    return new Promise((resolve) => {
+      if (!this.online) {
+        resolve([]);
+        return;
+      }
+      const id = crypto.randomUUID();
+      const timer = setTimeout(() => {
+        this.voiceWaiters.delete(id);
+        resolve([]);
+      }, timeoutMs);
+      this.voiceWaiters.set(id, (msg) => {
+        clearTimeout(timer);
+        resolve((msg.data.notes as RecentNote[] | undefined) ?? []);
+      });
+      this.ws!.send(JSON.stringify({ type: "memory.recent.request", id, limit }));
+    });
+  }
+
   /** Bittet die Backend-VoiceEngine (Piper) um Sprachsynthese. Bei keinem
    * Backend/keiner Antwort (Timeout `timeoutMs`) kommt ``{ok: false, error:
    * null}`` zurück – Aufrufer sollen dann still auf die Browser-Stimme
@@ -272,6 +299,7 @@ export const backend = new Backend();
 const backendApi = {
   sendChat: (text: string) => backend.sendChat(text),
   completeStep: (index: number) => backend.completeStep(index),
+  requestRecentNotes: (limit?: number) => backend.requestRecentNotes(limit),
   musicPlay: () => backend.musicPlay(),
   musicPause: () => backend.musicPause(),
   musicNext: () => backend.musicNext(),

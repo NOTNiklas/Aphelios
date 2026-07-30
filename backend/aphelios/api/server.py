@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 
@@ -42,6 +43,7 @@ BROADCAST_TOPICS = [
     "plan.update",
     "music.update",
     "stock.update",
+    "dashboard.overview",
     "voice.audio",
     "voice.transcript",
     "voice.error",
@@ -132,13 +134,35 @@ def create_app(config: Config | None = None) -> FastAPI:
     for topic in BROADCAST_TOPICS:
         bus.subscribe(topic, _broadcast)
 
+    async def _dashboard_overview_loop() -> None:
+        """Sendet alle 5s einen kompakten Überblick fürs Web-Dashboard
+        (Dashboard.tsx) – Engine-Status ändert sich sonst nur beim initialen
+        WS-Connect-Snapshot, ein offenes Dashboard sähe einen abgestürzten
+        Engine also nie live."""
+        while True:
+            await asyncio.sleep(5.0)
+            await bus.publish(
+                Event(
+                    "dashboard.overview",
+                    {
+                        "engines": manager.status(),
+                        "clients": connections.count,
+                        "ai": "claude" if config.has_anthropic else "fallback",
+                        "updated_at": time.time(),
+                    },
+                    source="api",
+                )
+            )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         await manager.start_all()
         logger.info("APHELIOS online – %d Engine(s) aktiv", len(manager.engines))
+        overview_task = asyncio.create_task(_dashboard_overview_loop())
         try:
             yield
         finally:
+            overview_task.cancel()
             await manager.stop_all()
             logger.info("APHELIOS heruntergefahren")
 
@@ -318,6 +342,10 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(Event(msg_type, {"level": message.get("level")}, source="hud"))
     elif msg_type == "music.like.request":
         await bus.publish(Event(msg_type, {"liked": bool(message.get("liked"))}, source="hud"))
+    elif msg_type == "memory.recent.request":
+        await bus.publish(
+            Event("memory.recent", {"id": message.get("id"), "limit": message.get("limit", 15)}, source="hud")
+        )
     elif msg_type == "voice.speak":
         request_id = message.get("id", uuid.uuid4().hex)
         await bus.publish(

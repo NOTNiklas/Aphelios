@@ -6,6 +6,7 @@ import type {
   CalendarData,
   ConfirmationRequest,
   ConsoleMessage,
+  DashboardOverview,
   Link,
   MailData,
   MusicData,
@@ -23,6 +24,7 @@ interface HudState {
   calendar: CalendarData | null;
   music: MusicData | null;
   stocks: StockData | null;
+  dashboardOverview: DashboardOverview | null;
   /** Trading-Dashboard-Popup geöffnet? (TopBar-Button, siehe TradingDashboard.tsx). */
   tradingOpen: boolean;
   /** Aktueller Plan (PlanningEngine, ausgelöst über "/plan <Aufgabe>"). */
@@ -58,6 +60,7 @@ export const useHud = create<HudState>((set) => ({
   calendar: null,
   music: null,
   stocks: null,
+  dashboardOverview: null,
   tradingOpen: false,
   plan: null,
   engines: {},
@@ -106,6 +109,9 @@ export const useHud = create<HudState>((set) => ({
 
         case "stock.update":
           return { stocks: msg.data as unknown as StockData };
+
+        case "dashboard.overview":
+          return { dashboardOverview: msg.data as unknown as DashboardOverview };
 
         case "plan.update":
           return { plan: msg.data as unknown as PlanData };

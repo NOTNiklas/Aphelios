@@ -39,6 +39,13 @@ export function TopBar() {
         >
           TRADING
         </button>
+        <a
+          href="/dashboard"
+          className="rounded border border-hud-neon/30 px-2.5 py-1 font-hud text-[11px] tracking-[0.25em] text-hud-neon/70 hover:border-hud-neon/60 hover:text-hud-neon"
+          title="Web-Dashboard (Agenten-Überwachung) öffnen"
+        >
+          DASHBOARD
+        </a>
         <span className="hidden font-hud text-[11px] tracking-[0.3em] text-hud-neon/60 md:inline">
           AI: {ai === "claude" ? "CLAUDE" : "FALLBACK"}
         </span>

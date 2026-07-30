@@ -206,6 +206,7 @@ class MemoryEngine(BaseEngine):
         self.bus.subscribe("memory.search", self._on_search)
         self.bus.subscribe("memory.kv.set", self._on_kv_set)
         self.bus.subscribe("memory.kv.get", self._on_kv_get)
+        self.bus.subscribe("memory.recent", self._on_recent)
         self.log.info("Vault bereit unter %s", self.vault.resolve())
 
     async def stop(self) -> None:
@@ -391,6 +392,21 @@ class MemoryEngine(BaseEngine):
         row = self._db.execute("SELECT value FROM kv WHERE key = ?", (key,)).fetchone()
         value = json.loads(row[0]) if row else None
         await self.emit("memory.kv.result", {"id": request_id, "key": key, "value": value})
+
+    async def _on_recent(self, event: Event) -> None:
+        """Liefert die zuletzt erzeugten/aktualisierten Notizen – Aktivitäts-
+        Feed fürs Web-Dashboard (Dashboard.tsx), keine Suche nötig."""
+        request_id = event.data.get("id", "")
+        limit = min(int(event.data.get("limit", 15) or 15), 50)
+        rows = self._db.execute(
+            "SELECT title, category, tags, created_at FROM notes ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        notes = [
+            {"title": r[0], "category": r[1], "tags": r[2].split(",") if r[2] else [], "created_at": r[3]}
+            for r in rows
+        ]
+        await self.emit("memory.recent.result", {"id": request_id, "notes": notes})
 
     # -- intern ---------------------------------------------------------------
     def _classify(self, text: str) -> str:

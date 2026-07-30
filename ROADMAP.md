@@ -268,7 +268,10 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   Push-Benachrichtigungen, Hintergrund-Sync)
 - ⬜ Smart Home / Home Assistant
 - ⬜ Lokale LLMs als Standard
-- ⬜ Web-Dashboard
+- ✅ **Web-Dashboard** – eigene Seite (`/dashboard`, Button in der TopBar):
+  Engine-Status-Grid (live, alle 5s aktualisiert), System-Werte, zuletzt
+  erzeugte Vault-Notizen als Aktivitäts-Feed. Kein neuer Router – simpler
+  Pfad-Check in `main.tsx`.
 - ⬜ Multi-PC-Synchronisation, NAS, Raspberry-Pi-Nodes
 - ⬜ CAD-/3D-Unterstützung, KI-Code-Reviews
 

@@ -92,6 +92,22 @@ export interface StockData {
   updated_at: number;
 }
 
+/** Eine Vault-Notiz im Aktivitäts-Feed des Web-Dashboards. */
+export interface RecentNote {
+  title: string;
+  category: string;
+  tags: string[];
+  created_at: number;
+}
+
+/** Periodischer Überblick fürs Web-Dashboard (Dashboard.tsx). */
+export interface DashboardOverview {
+  engines: Record<string, string>;
+  clients: number;
+  ai: "claude" | "fallback";
+  updated_at: number;
+}
+
 export interface ConfirmationRequest {
   id: string;
   action: string;
