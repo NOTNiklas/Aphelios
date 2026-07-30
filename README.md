@@ -79,6 +79,7 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Trading-Dashboard (Aktien)** | ✅ Real, sofort aktiv | Popup über den „TRADING"-Button: Watchlist mit echten Kursen (Yahoo Finance, kein Key nötig) + eingebetteter TradingView-Chart; `/aktie <Symbol>` bzw. Claude-Werkzeug beantworten Kursfragen im Chat |
 | **Investment-Committee** | ✅ Real, optional (braucht `ANTHROPIC_API_KEY`) | `/aktien-analyse <Symbol>` – drei parallele Claude-Perspektiven (Bulle/Bär/Risiko) + Fazit, keine Anlageberatung; rein auf Zuruf, KEIN automatischer Hintergrund-Lauf – kein Order-Ausführen, siehe [`docs/engines.md`](./docs/engines.md) |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
+| **Boot-Ablauf** | ✅ Real | Skeleton-Ladezustand beim Start (bis zu 30s), danach entweder das echte HUD oder eine 404-artige Fehlerseite ("Erneut versuchen"), falls kein Backend erreichbar ist |
 | **Event-Bus & Engine-Manager** | ✅ Real | Ereignisgesteuerte Kommunikation zwischen unabhängigen Engines |
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |

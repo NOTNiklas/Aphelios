@@ -1,16 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import { Boot } from "./Boot";
 import { Dashboard } from "./panels/Dashboard";
 import "./index.css";
 
 // Kein Router-Paket für eine einzelne zusätzliche Seite – ein simpler
 // Pfad-Check reicht (siehe Dashboard.tsx). "/" bleibt weiterhin das
-// normale HUD, unverändert für alle bestehenden Aufrufer (PWA-Icon etc.).
+// normale HUD (jetzt über Boot: Skeleton -> App oder 404 nach 30s ohne
+// Backend-Verbindung), unverändert für alle bestehenden Aufrufer (PWA-Icon etc.).
 const isDashboard = window.location.pathname.replace(/\/+$/, "") === "/dashboard";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>{isDashboard ? <Dashboard /> : <App />}</React.StrictMode>,
+  <React.StrictMode>{isDashboard ? <Dashboard /> : <Boot />}</React.StrictMode>,
 );
 
 // PWA: registriert den Service Worker, damit APHELIOS auf dem Handy zum
