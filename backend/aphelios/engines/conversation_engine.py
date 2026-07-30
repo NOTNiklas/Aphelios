@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from datetime import datetime
 
 from aphelios.core.engine import BaseEngine
 from aphelios.core.event_bus import Event, request
@@ -433,12 +434,39 @@ class ConversationEngine(BaseEngine):
         self._history = value if isinstance(value, list) else []
 
     async def _remember_turn(self, user_text: str, reply: str) -> None:
-        """Hängt einen Austausch an den Verlauf an und persistiert ihn."""
+        """Hängt einen Austausch an den Verlauf an und persistiert ihn –
+        UND legt zusätzlich eine eigene Vault-Notiz an (Kategorie
+        "Gespräche"), damit jedes Thema, über das der Nutzer mit APHELIOS
+        schreibt oder spricht (Text und Sprache laufen über denselben
+        chat.request-Weg), im Obsidian-Vault durchsuchbar/wiederfindbar
+        bleibt – nicht nur im internen, nicht-Obsidian-Verlaufsspeicher
+        (memory.kv) oben.
+
+        Ein eigener, eindeutiger Titel pro Austausch (statt Update-statt-
+        Duplikat wie bei der "Projekte"-Notiz der PlanningEngine): zwei
+        ähnliche Fragen an verschiedenen Tagen sollen als GETRENNTE
+        Gespräche auffindbar bleiben, nicht sich gegenseitig überschreiben."""
         assert self._history is not None
         self._history.append({"role": "user", "content": user_text})
         self._history.append({"role": "assistant", "content": reply})
         del self._history[:-MAX_HISTORY_MESSAGES]
         await self.emit("memory.kv.set", {"key": HISTORY_KV_KEY, "value": self._history})
+        await self._log_conversation_note(user_text, reply)
+
+    async def _log_conversation_note(self, user_text: str, reply: str) -> None:
+        topic = user_text.strip().replace("\n", " ")
+        if len(topic) > 70:
+            topic = topic[:70].rstrip() + "…"
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        await self.emit(
+            "memory.note",
+            {
+                "title": f"{topic} – {timestamp}",
+                "content": f"**Du:** {user_text}\n\n**APHELIOS:** {reply}",
+                "category": "Gespräche",
+                "tags": ["gespraech"],
+            },
+        )
 
     async def _memory_context(self, text: str) -> str:
         """Fragt thematisch passende Vault-Notizen ab (kurzer Kontext-Hinweis).

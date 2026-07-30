@@ -81,6 +81,8 @@ CATEGORIES = [
     "Notizen",
     "Aufgaben",
     "Protokolle",
+    "Analysen",
+    "Gespräche",
 ]
 
 _SLUG_RE = re.compile(r"[^\w\-]+", re.UNICODE)
