@@ -251,6 +251,20 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 
 ---
 
+## Alpha 1.10 — Live-Bildschirmfreigabe (Ersatz für Einzel-Screenshots)
+
+- ✅ **ScreenShareEngine** – Nutzer teilt aktiv einen Bildschirm/ein Fenster
+  über die Browser-Screen-Capture-API (`getDisplayMedia`, Button in der
+  TopBar); ein Canvas komprimiert alle 3s einen Frame als JPEG und sendet
+  ihn ans Backend. Kein echtes Video an Claude (die API nimmt nur
+  Einzelbilder) – nur der jeweils LETZTE Frame wird gehalten, kein Archiv.
+  - **Auf Zuruf** – `/bildschirm <Frage>` analysiert den aktuellen Frame.
+  - **Proaktiv (Schalter im HUD)** – prüft alle 10s automatisch und meldet
+    sich nur bei etwas Auffälligem (Fehlermeldung, Absturz) – sonst
+    lautlos, kein Spam.
+- Ergänzt (ersetzt nicht) die VisionEngine – `/sieh` bleibt der Weg für
+  einen einmaligen OS-Screenshot ohne aktive Freigabe.
+
 ## Beta — Betriebssystem-Charakter
 
 - ⬜ AgentEngine: mehrere parallele AI-Agenten

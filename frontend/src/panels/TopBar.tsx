@@ -1,6 +1,7 @@
 /** Schmale Kopfzeile mit Uhrzeit, Datum und Verbindungsstatus. */
 import { useEffect, useState } from "react";
 import { useHud } from "../store/hud";
+import { ScreenShareControl } from "./ScreenShareControl";
 
 export function TopBar() {
   const [now, setNow] = useState(new Date());
@@ -46,6 +47,7 @@ export function TopBar() {
         >
           DASHBOARD
         </a>
+        <ScreenShareControl />
         <span className="hidden font-hud text-[11px] tracking-[0.3em] text-hud-neon/60 md:inline">
           AI: {ai === "claude" ? "CLAUDE" : "FALLBACK"}
         </span>

@@ -178,6 +178,23 @@ class Backend {
     resolve(msg);
   }
 
+  /** Sendet einen komprimierten Bildschirm-Frame (JPEG-Data-URL) an die
+   * ScreenShareEngine, solange der Nutzer aktiv teilt. Offline: no-op –
+   * ohne Backend gibt es niemanden, der den Frame entgegennimmt. */
+  sendScreenFrame(frameDataUrl: string): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "screen.frame", frame_base64: frameDataUrl }));
+  }
+  /** Beendet die Freigabe serverseitig – der letzte Frame wird verworfen,
+   * damit keine veraltete Analyse mehr möglich ist. */
+  stopScreenShare(): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "screen.share.stop" }));
+  }
+  /** Schaltet die proaktive Bildschirm-Prüfung an/aus (alle 10s, meldet
+   * sich nur bei etwas Auffälligem). */
+  setScreenProactive(enabled: boolean): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "screen.proactive.set", enabled }));
+  }
+
   /** Holt die zuletzt erzeugten Vault-Notizen (Aktivitäts-Feed im
    * Web-Dashboard). Leere Liste bei Timeout/Offline statt eines Fehlers –
    * das Dashboard zeigt dann einfach "keine Aktivität". */
@@ -300,6 +317,9 @@ const backendApi = {
   sendChat: (text: string) => backend.sendChat(text),
   completeStep: (index: number) => backend.completeStep(index),
   requestRecentNotes: (limit?: number) => backend.requestRecentNotes(limit),
+  sendScreenFrame: (frameDataUrl: string) => backend.sendScreenFrame(frameDataUrl),
+  stopScreenShare: () => backend.stopScreenShare(),
+  setScreenProactive: (enabled: boolean) => backend.setScreenProactive(enabled),
   musicPlay: () => backend.musicPlay(),
   musicPause: () => backend.musicPause(),
   musicNext: () => backend.musicNext(),

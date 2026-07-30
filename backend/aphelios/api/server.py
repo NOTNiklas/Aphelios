@@ -248,6 +248,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/termin-anlegen ": ("calendar.create.request", "text", {}),
     "/aktie ": ("stock.quote.request", "symbol", {}),
     "/aktien-analyse ": ("research.committee.request", "symbol", {}),
+    "/bildschirm ": ("screen.ask.request", "question", {}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
@@ -286,6 +287,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/termin-anlegen <Titel> | <Start JJJJ-MM-TT HH:MM> | <Dauer in Min.>", "Legt einen Kalender-Termin an – mit Bestätigung"),
     ("/aktie <Symbol>", "Aktueller Kurs eines Börsensymbols, z. B. \"/aktie AAPL\" (kein Firmenname)"),
     ("/aktien-analyse <Symbol>", "Investment-Committee (Bulle/Bär/Risiko + Fazit) zu einem Symbol – keine Anlageberatung"),
+    ("/bildschirm <Frage>", "Analysiert den aktuell geteilten Bildschirm (Screen-Sharing muss aktiv sein)"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 
@@ -346,6 +348,12 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(
             Event("memory.recent", {"id": message.get("id"), "limit": message.get("limit", 15)}, source="hud")
         )
+    elif msg_type == "screen.frame":
+        await bus.publish(Event("screen.frame", {"frame_base64": message.get("frame_base64", "")}, source="hud"))
+    elif msg_type == "screen.share.stop":
+        await bus.publish(Event("screen.share.stop", {}, source="hud"))
+    elif msg_type == "screen.proactive.set":
+        await bus.publish(Event("screen.proactive.set", {"enabled": bool(message.get("enabled"))}, source="hud"))
     elif msg_type == "voice.speak":
         request_id = message.get("id", uuid.uuid4().hex)
         await bus.publish(

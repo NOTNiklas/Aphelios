@@ -50,6 +50,7 @@ separate UI nötig):
 | `/termin-anlegen <Titel> \| <Start> \| <Dauer>` | Legt einen Kalender-Termin an – mit Bestätigung |
 | `/aktie <Symbol>` | Aktueller Kurs eines Börsensymbols, z. B. `/aktie AAPL` (kein Firmenname) |
 | `/aktien-analyse <Symbol>` | Investment-Committee (Bulle/Bär/Risiko + Fazit) – keine Anlageberatung |
+| `/bildschirm <Frage>` | Analysiert den aktuell live geteilten Bildschirm (Screen-Sharing-Button in der TopBar) |
 | `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
