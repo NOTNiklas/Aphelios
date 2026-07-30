@@ -10,6 +10,7 @@ from aphelios.engines.memory_engine import MemoryEngine
 from aphelios.engines.music_engine import MusicEngine
 from aphelios.engines.planning_engine import PlanningEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
+from aphelios.engines.research_engine import ResearchEngine
 from aphelios.engines.knowledge_engine import KnowledgeEngine
 from aphelios.engines.office_engine import OfficeEngine
 from aphelios.engines.stock_engine import StockEngine
@@ -31,6 +32,7 @@ ALL_ENGINES = [
     CalendarEngine,
     MusicEngine,
     StockEngine,
+    ResearchEngine,
     ReasoningEngine,
     PlanningEngine,
     AutomationEngine,

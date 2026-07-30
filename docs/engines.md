@@ -561,3 +561,33 @@ EINEM beliebigen Symbol – `/aktie <Symbol>` im Chat oder Claudes Werkzeug
   TradingView); nur die Watchlist-Zeilen kommen von der StockEngine.
 - Kein `RiskLevel`-Handling nötig – reines Lesen, keine Wiedergabe-/
   Schreibsteuerung wie bei MusicEngine/MailEngine.
+
+## Engines nach Alpha 1.8 (ResearchEngine: Investment-Committee + geplante Recherche)
+
+### ResearchEngine (real, optional – braucht ANTHROPIC_API_KEY)
+Baut zwei rein analytische Ideen aus dem extern angeschauten Projekt
+["Vibe-Trading"](https://github.com/HKUDS/Vibe-Trading) nativ im
+Aphelios-Stil nach – eigene Engine, eigenes Bus-Protokoll, **keine**
+übernommene Fremd-Codebasis, **kein** Order-Ausführen/keine
+Broker-Anbindung (das bleibt bewusst außerhalb dessen, was diese Engine
+tut – APHELIOS platziert keine echten Trades).
+
+- **Investment Committee (Swarm)** – `/aktien-analyse <Symbol>` im Chat
+  oder Claudes Werkzeug `run_investment_committee`: drei unabhängige
+  Claude-Aufrufe (Bulle/Bär/Risiko) laufen PARALLEL (`asyncio.gather`) auf
+  Basis des echten aktuellen Kurses (`aphelios/integrations/yahoo_finance.py`,
+  dieselbe Quelle wie `StockEngine`), eine vierte Anfrage fasst sie zu
+  einer ausgewogenen Einschätzung zusammen – bewusst OHNE konkrete
+  Kauf-/Verkaufsempfehlung. Jede Ausgabe endet mit einem Disclaimer.
+- **Geplante Recherche (Scheduled Research)** – läuft automatisch alle
+  `APHELIOS_RESEARCH_INTERVAL_HOURS` (Standard: täglich, erster Lauf 30s
+  nach dem Start) dieselbe Analyse für jedes Symbol der `StockEngine`-
+  Watchlist und legt das Ergebnis als datierte Obsidian-Notiz ab
+  (Kategorie „Analysen", Tags `research`/`aktie`/`<symbol>`). Bewusst
+  **kein** Cron-Parser – ein einfacher Intervall-Loop reicht, dasselbe
+  Muster wie `WeatherEngine`/`StockEngine`.
+- Ohne `ANTHROPIC_API_KEY` bleibt die geplante Recherche inaktiv (kein
+  sinnvoller Betrieb ohne Claude); Ad-hoc-Anfragen antworten stattdessen
+  mit einem klaren Hinweis statt eines Fehlers.
+- `_run_committee()` wird von BEIDEN Nutzungswegen geteilt (Ad-hoc UND
+  geplant) – die eigentliche Analyse-Logik existiert nur einmal.

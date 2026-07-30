@@ -91,6 +91,10 @@ class Config:
     #: gelisteten.
     stock_symbols: str = "AAPL,MSFT,GOOGL,AMZN,TSLA"
     stock_poll_interval: float = 60.0
+    #: Intervall (Stunden) für die geplante Investment-Committee-Recherche
+    #: über die Watchlist (ResearchEngine) – läuft einmal kurz nach dem
+    #: Start, danach in diesem Rhythmus. Nur aktiv mit ANTHROPIC_API_KEY.
+    research_interval_hours: float = 24.0
 
     # --- Spotify (MusicEngine, eigene Spotify-App nötig) ---
     spotify_client_id: str = ""
@@ -157,6 +161,7 @@ class Config:
             google_poll_interval=float(_get("APHELIOS_GOOGLE_POLL_INTERVAL", "300")),
             stock_symbols=_get("APHELIOS_STOCK_SYMBOLS", "AAPL,MSFT,GOOGL,AMZN,TSLA"),
             stock_poll_interval=float(_get("APHELIOS_STOCK_POLL_INTERVAL", "60")),
+            research_interval_hours=float(_get("APHELIOS_RESEARCH_INTERVAL_HOURS", "24")),
             spotify_client_id=_get("SPOTIFY_CLIENT_ID", ""),
             spotify_client_secret=_get("SPOTIFY_CLIENT_SECRET", ""),
             spotify_token_path=_resolve_path(_get("APHELIOS_SPOTIFY_TOKEN_PATH", "./data/spotify_token.json")),

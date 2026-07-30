@@ -57,7 +57,8 @@ Du hast Zugriff auf Werkzeuge, mit denen du tatsächlich etwas auf dem PC \
 des Nutzers tun kannst (Vault durchsuchen, Aufgabe planen, Code schreiben, \
 Programm öffnen/schließen, Datei löschen, PowerShell-Befehl ausführen, \
 Bildschirm ansehen/lesen, Webseite öffnen, Office-Dokument/PDF lesen, Mail \
-senden, Termin anlegen, Aktienkurs abfragen). Nutze ein Werkzeug NUR, wenn die Anfrage \
+senden, Termin anlegen, Aktienkurs abfragen, Investment-Committee-Analyse). \
+Nutze ein Werkzeug NUR, wenn die Anfrage \
 eindeutig danach verlangt ("was hab ich mir zu X notiert" → Vault \
 durchsuchen, "öffne Spotify" → Programm öffnen) – bei normalem Geplauder \
 oder allgemeinen Fragen antwortest du direkt, ohne Werkzeug. Rufst du ein \
@@ -270,6 +271,23 @@ _TOOLS: list[dict] = [
             "required": ["symbol"],
         },
     },
+    {
+        "name": "run_investment_committee",
+        "description": (
+            "Führt eine mehrperspektivische Investment-Committee-Analyse "
+            "(Bulle/Bär/Risiko + zusammenfassendes Fazit, keine Kauf-/"
+            "Verkaufsempfehlung) zu einer Aktie durch. NUR bei Fragen nach "
+            "einer echten Einschätzung/Meinung nutzen ('was hältst du von "
+            "der Apple-Aktie', 'lohnt sich TSLA gerade') – für den reinen "
+            "aktuellen Kurs stattdessen get_stock_quote nutzen (schneller, "
+            "kein mehrfacher Claude-Aufruf)."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"symbol": {"type": "string", "description": "Börsensymbol, z. B. 'AAPL'."}},
+            "required": ["symbol"],
+        },
+    },
 ]
 
 
@@ -331,6 +349,8 @@ def _tool_call_to_event(name: str, tool_input: dict) -> tuple[str, dict] | None:
         return "calendar.create.request", {"text": f"{title} | {start} | {duration}"}
     if name == "get_stock_quote":
         return "stock.quote.request", {"symbol": tool_input.get("symbol", "")}
+    if name == "run_investment_committee":
+        return "research.committee.request", {"symbol": tool_input.get("symbol", "")}
     return None
 
 

@@ -223,6 +223,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
     "/mail-senden ": ("mail.send.request", "text", {}),
     "/termin-anlegen ": ("calendar.create.request", "text", {}),
     "/aktie ": ("stock.quote.request", "symbol", {}),
+    "/aktien-analyse ": ("research.committee.request", "symbol", {}),
 }
 
 #: Slash-Befehle ganz ohne Argument.
@@ -260,6 +261,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/mail-senden <An> | <Betreff> | <Text>", "Sendet eine Gmail-Mail – mit Bestätigung"),
     ("/termin-anlegen <Titel> | <Start JJJJ-MM-TT HH:MM> | <Dauer in Min.>", "Legt einen Kalender-Termin an – mit Bestätigung"),
     ("/aktie <Symbol>", "Aktueller Kurs eines Börsensymbols, z. B. \"/aktie AAPL\" (kein Firmenname)"),
+    ("/aktien-analyse <Symbol>", "Investment-Committee (Bulle/Bär/Risiko + Fazit) zu einem Symbol – keine Anlageberatung"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 

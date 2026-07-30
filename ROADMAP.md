@@ -231,6 +231,24 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 - Wiedergabesteuerung erfordert Spotify Premium (API-Einschränkung); der
   aktuelle Song wird auch mit einem Free-Account angezeigt.
 
+## Alpha 1.9 — Investment-Committee & geplante Recherche (Research Agents)
+
+- ✅ **ResearchEngine** – baut zwei rein analytische Ideen aus dem extern
+  angeschauten Projekt [Vibe-Trading](https://github.com/HKUDS/Vibe-Trading)
+  nativ im Aphelios-Stil nach (eigene Engine, kein übernommener Fremdcode,
+  kein Order-Ausführen/keine Broker-Anbindung):
+  - **Investment Committee (Swarm)** – `/aktien-analyse <Symbol>` bzw.
+    Claude-Werkzeug `run_investment_committee`: drei parallele
+    Bulle-/Bär-/Risiko-Perspektiven + zusammenfassendes Fazit, keine
+    konkrete Kauf-/Verkaufsempfehlung, immer mit Disclaimer.
+  - **Geplante Recherche (Scheduled Research)** – läuft automatisch
+    (Standard: täglich) dieselbe Analyse über die Aktien-Watchlist und
+    legt datierte Notizen im Obsidian-Vault ab (Kategorie „Analysen").
+- Bewusst NICHT übernommen aus Vibe-Trading: Broker-Anbindungen, Live-
+  Order-Ausführung, Kill-Switch, 450+ Alpha-Faktoren, Multi-Provider-LLM-
+  Adapter – das wäre ein eigenständiges, deutlich größeres Projekt mit
+  echtem finanziellem Risiko, siehe `docs/engines.md`.
+
 ---
 
 ## Beta — Betriebssystem-Charakter
