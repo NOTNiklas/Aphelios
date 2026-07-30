@@ -1,43 +1,36 @@
-"""ResearchEngine – Investment-Committee-Analyse (Swarm) + geplante Recherche.
+"""ResearchEngine – Investment-Committee-Analyse (Swarm), rein auf Zuruf.
 
-Baut die *nicht* handelnden, rein analytischen Ideen aus dem extern
+Baut die *nicht* handelnde, rein analytische Idee aus dem extern
 angeschauten Projekt "Vibe-Trading" nativ im Aphelios-Stil nach (eigene
 Engine, eigenes Bus-Protokoll, keine übernommene Fremd-Codebasis) – bewusst
 OHNE Order-Ausführung/Broker-Anbindung, das bleibt außerhalb dessen, was
 diese Engine tut.
 
-Zwei Nutzungswege:
-    * **Ad-hoc ("Investment Committee")** – ``/aktien-analyse <Symbol>`` im
-      Chat oder Claudes Werkzeug ``run_investment_committee``: drei
-      unabhängige Claude-"Perspektiven" (Bulle/Bär/Risiko) analysieren
-      PARALLEL dasselbe Symbol auf Basis des echten aktuellen Kurses
-      (``aphelios.integrations.yahoo_finance``), eine vierte Anfrage fasst
-      sie zu einer ausgewogenen Einschätzung zusammen. Alle Schritte werden
-      sichtbar gestreamt, analog zur ``ReasoningEngine``.
-    * **Geplant ("Scheduled Research")** – läuft automatisch alle
-      ``APHELIOS_RESEARCH_INTERVAL_HOURS`` (Standard: täglich) dieselbe
-      Analyse für jedes Symbol der Watchlist (``APHELIOS_STOCK_SYMBOLS``,
-      dieselbe wie ``StockEngine``) und legt das Ergebnis als datierte
-      Obsidian-Notiz ab (Kategorie "Analysen") – kein Cron-Parser nötig,
-      ein einfacher Intervall-Loop reicht (dasselbe Muster wie
-      ``WeatherEngine``/``StockEngine``).
+``/aktien-analyse <Symbol>`` im Chat oder Claudes Werkzeug
+``run_investment_committee``: drei unabhängige Claude-"Perspektiven"
+(Bulle/Bär/Risiko) analysieren PARALLEL dasselbe Symbol auf Basis des
+echten aktuellen Kurses (``aphelios.integrations.yahoo_finance``), eine
+vierte Anfrage fasst sie zu einer ausgewogenen Einschätzung zusammen. Alle
+Schritte werden sichtbar gestreamt, analog zur ``ReasoningEngine``.
 
 Jede Ausgabe trägt einen Disclaimer – automatisch generierte Meinung,
-keine Anlageberatung. Ohne ``ANTHROPIC_API_KEY`` bleibt die geplante
-Recherche inaktiv (kein sinnvoller Betrieb ohne Claude); die Ad-hoc-Anfrage
-antwortet stattdessen mit einem klaren Hinweis statt eines Fehlers.
+keine Anlageberatung.
+
+**Bewusst KEIN automatischer Hintergrund-Lauf mehr** (früher "Scheduled
+Research", alle N Stunden über die komplette Watchlist): lief bei jedem
+Backend-Neustart erneut, weil sich der letzte Lauf nirgends persistent
+merkte – mehrere Neustarts während einer Sitzung führten so zu unerwartet
+vielen, ungefragten Claude-Aufrufen und Vault-Notizen. Auf ausdrücklichen
+Nutzerwunsch entfernt statt "repariert"; nur noch Ad-hoc-Analyse.
 
 Bus-Schnittstelle:
     * ``research.committee.request`` (in) – ``{id, symbol}`` (Claude-Werkzeug)
       oder ``{id, text}`` (Slash-Befehl) → ``chat.token``/``chat.response``.
-    * ``memory.note`` (out) – geplante Recherche legt pro Symbol/Tag eine
-      Notiz an, Kategorie ``"Analysen"``, Tags ``["research", "aktie", <symbol>]``.
 """
 
 from __future__ import annotations
 
 import asyncio
-import time
 
 import httpx
 
@@ -77,7 +70,7 @@ _SYNTHESIS_PERSONA = (
 
 
 class ResearchEngine(BaseEngine):
-    """Investment-Committee-Analyse auf Zuruf + geplante Recherche über die Watchlist."""
+    """Investment-Committee-Analyse, ausschließlich auf Zuruf."""
 
     name = "research"
 
@@ -92,22 +85,16 @@ class ResearchEngine(BaseEngine):
                 self._client = anthropic.AsyncAnthropic(api_key=self.config.anthropic_api_key)
             except Exception:  # noqa: BLE001
                 self._client = None
+        else:
+            self.log.info(
+                "Kein ANTHROPIC_API_KEY – Investment-Committee-Analyse antwortet auf "
+                "Anfragen mit einem Hinweis statt eines Ergebnisses."
+            )
 
         self.bus.subscribe("research.committee.request", self.handle_committee_request)
 
-        if self._client is None:
-            self.log.info(
-                "Kein ANTHROPIC_API_KEY – geplante Investment-Committee-Recherche bleibt "
-                "inaktiv (Ad-hoc-Anfragen antworten mit Hinweis)."
-            )
-            return
-        self._task = asyncio.create_task(self._scheduled_loop())
-
     async def stop(self) -> None:
         self._running = False
-        task = getattr(self, "_task", None)
-        if task:
-            task.cancel()
         http = getattr(self, "_http", None)
         if http:
             await http.aclose()
@@ -185,50 +172,6 @@ class ResearchEngine(BaseEngine):
         await say(_DISCLAIMER)
 
         await self.emit("chat.response", {"id": request_id, "text": "".join(buffer), "final": True})
-
-    # -- Geplante Recherche über die Watchlist ------------------------------------
-    async def _scheduled_loop(self) -> None:
-        # Kurze Verzögerung statt sofort beim Start – andere Engines (v. a.
-        # StockEngine) sollen zuerst hochfahren, und ein sofortiger Lauf bei
-        # JEDEM Backend-Neustart wäre unnötig teuer (mehrere Claude-Aufrufe
-        # je Watchlist-Symbol).
-        await asyncio.sleep(30)
-        while self._running:
-            try:
-                await self._run_scheduled_research()
-            except Exception:  # noqa: BLE001
-                self.log.exception("Geplante Investment-Committee-Recherche fehlgeschlagen")
-            await asyncio.sleep(self.config.research_interval_hours * 3600)
-
-    async def _run_scheduled_research(self) -> None:
-        symbols = [s.strip().upper() for s in self.config.stock_symbols.split(",") if s.strip()]
-        for symbol in symbols:
-            try:
-                result = await self._run_committee(symbol)
-            except Exception:  # noqa: BLE001
-                self.log.exception("Geplante Analyse für %s fehlgeschlagen", symbol)
-                continue
-            await self._save_note(symbol, result)
-
-    async def _save_note(self, symbol: str, result: dict[str, str]) -> None:
-        date_str = time.strftime("%Y-%m-%d")
-        content = (
-            f"{result['quote_line']}\n\n"
-            f"**Bulle:** {result['bull']}\n\n"
-            f"**Bär:** {result['bear']}\n\n"
-            f"**Risiko:** {result['risk']}\n\n"
-            f"**Fazit:** {result['synthesis']}\n\n"
-            f"{_DISCLAIMER}"
-        )
-        await self.emit(
-            "memory.note",
-            {
-                "title": f"Aktienanalyse {symbol} – {date_str}",
-                "content": content,
-                "category": "Analysen",
-                "tags": ["research", "aktie", symbol.lower()],
-            },
-        )
 
     async def _reply(self, request_id: str, text: str) -> None:
         for word in text.split(" "):

@@ -233,17 +233,19 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
 
 ## Alpha 1.9 — Investment-Committee & geplante Recherche (Research Agents)
 
-- ✅ **ResearchEngine** – baut zwei rein analytische Ideen aus dem extern
-  angeschauten Projekt [Vibe-Trading](https://github.com/HKUDS/Vibe-Trading)
-  nativ im Aphelios-Stil nach (eigene Engine, kein übernommener Fremdcode,
-  kein Order-Ausführen/keine Broker-Anbindung):
-  - **Investment Committee (Swarm)** – `/aktien-analyse <Symbol>` bzw.
-    Claude-Werkzeug `run_investment_committee`: drei parallele
-    Bulle-/Bär-/Risiko-Perspektiven + zusammenfassendes Fazit, keine
-    konkrete Kauf-/Verkaufsempfehlung, immer mit Disclaimer.
-  - **Geplante Recherche (Scheduled Research)** – läuft automatisch
-    (Standard: täglich) dieselbe Analyse über die Aktien-Watchlist und
-    legt datierte Notizen im Obsidian-Vault ab (Kategorie „Analysen").
+- ✅ **ResearchEngine** – baut die rein analytische Investment-Committee-
+  Idee aus dem extern angeschauten Projekt
+  [Vibe-Trading](https://github.com/HKUDS/Vibe-Trading) nativ im
+  Aphelios-Stil nach (eigene Engine, kein übernommener Fremdcode, kein
+  Order-Ausführen/keine Broker-Anbindung): `/aktien-analyse <Symbol>` bzw.
+  Claude-Werkzeug `run_investment_committee` – drei parallele
+  Bulle-/Bär-/Risiko-Perspektiven + zusammenfassendes Fazit, keine
+  konkrete Kauf-/Verkaufsempfehlung, immer mit Disclaimer.
+- ⬜ ~~Geplante Recherche (Scheduled Research)~~ – ursprünglich gebaut
+  (automatischer täglicher Lauf über die Watchlist), aber wieder entfernt:
+  lief bei jedem Backend-Neustart erneut (kein persistenter "letzter
+  Lauf"-Zustand) und erzeugte dadurch unerwartet viele ungefragte
+  Claude-Aufrufe/Vault-Notizen – auf Nutzerwunsch ausgebaut statt repariert.
 - Bewusst NICHT übernommen aus Vibe-Trading: Broker-Anbindungen, Live-
   Order-Ausführung, Kill-Switch, 450+ Alpha-Faktoren, Multi-Provider-LLM-
   Adapter – das wäre ein eigenständiges, deutlich größeres Projekt mit
