@@ -280,8 +280,16 @@ Details, Einrichtung (Tesseract-Installation) und Bus-Schnittstelle in
   echten Kursen (StockEngine, Yahoo Finance, kein Key nötig) + eingebetteter
   TradingView-Chart; `/aktie <Symbol>` bzw. Claude-Werkzeug beantworten
   Kursfragen im Chat. Vorgezogen aus dieser Liste, siehe `docs/engines.md`.
+- ✅ **Push-Benachrichtigungen** – Web Push (VAPID) über den 🔔-Schalter in der
+  TopBar; Schlüssel wird beim ersten Start lokal erzeugt, kein eigener
+  Account nötig (`pip install -e ".[push]"`). Andere Engines (Morgen-Briefing)
+  lösen darüber proaktive Handy-Benachrichtigungen aus.
+- ✅ **Morgen-Briefing** – läuft einmal täglich (Wetter/Termine/Mails/Watchlist
+  zusammengefasst per Claude oder Vorlage), meldet sich im Chat UND per Push;
+  `/briefing` liefert es jederzeit sofort. Persistiert das Tagesdatum übers
+  Vault-kv, damit ein Neustart am selben Tag KEIN doppeltes Briefing auslöst.
 - ⬜ Native Handy-App (eigenständiges Projekt: Termine/Mails aktiv verwalten,
-  Push-Benachrichtigungen, Hintergrund-Sync)
+  Hintergrund-Sync)
 - ⬜ Smart Home / Home Assistant
 - ⬜ Lokale LLMs als Standard
 - ✅ **Web-Dashboard** – eigene Seite (`/dashboard`, Button in der TopBar):

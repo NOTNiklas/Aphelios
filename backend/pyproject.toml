@@ -53,6 +53,10 @@ browser = ["playwright>=1.40"]
 # Lesendes Öffnen von Office-Dokumenten/PDFs (OfficeEngine, Alpha 1.6): Word
 # (.docx), Excel (.xlsx), PowerPoint (.pptx), PDF – siehe docs/office.md.
 office = ["python-docx>=1.0", "openpyxl>=3.1", "python-pptx>=0.6", "pypdf>=4.0"]
+# Web-Push-Benachrichtigungen (PushEngine): VAPID-Signierung + Zustellung an
+# Push-Dienste (FCM/Mozilla Autopush). Kein eigener Account nötig – die
+# Schlüssel werden beim ersten Start lokal erzeugt, siehe push_engine.py.
+push = ["pywebpush>=2.0"]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "ruff>=0.3"]
 
 [project.scripts]

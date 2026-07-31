@@ -195,6 +195,22 @@ class Backend {
     if (this.online) this.ws!.send(JSON.stringify({ type: "screen.proactive.set", enabled }));
   }
 
+  /** Meldet ein Browser-Push-Abo bei der PushEngine an (siehe lib/push.ts).
+   * Offline: no-op – ohne Backend gibt es niemanden, der es speichern könnte;
+   * die Anmeldung wird dann beim nächsten Reconnect nicht automatisch
+   * nachgeholt (Nutzer müsste den Schalter erneut betätigen). */
+  pushSubscribe(subscription: PushSubscriptionJSON): void {
+    if (this.online) {
+      this.ws!.send(
+        JSON.stringify({ type: "push.subscribe", endpoint: subscription.endpoint, keys: subscription.keys }),
+      );
+    }
+  }
+  /** Entfernt ein zuvor angemeldetes Push-Abo. */
+  pushUnsubscribe(endpoint: string): void {
+    if (this.online) this.ws!.send(JSON.stringify({ type: "push.unsubscribe", endpoint }));
+  }
+
   /** Holt die zuletzt erzeugten Vault-Notizen (Aktivitäts-Feed im
    * Web-Dashboard). Leere Liste bei Timeout/Offline statt eines Fehlers –
    * das Dashboard zeigt dann einfach "keine Aktivität". */
@@ -320,6 +336,8 @@ const backendApi = {
   sendScreenFrame: (frameDataUrl: string) => backend.sendScreenFrame(frameDataUrl),
   stopScreenShare: () => backend.stopScreenShare(),
   setScreenProactive: (enabled: boolean) => backend.setScreenProactive(enabled),
+  pushSubscribe: (subscription: PushSubscriptionJSON) => backend.pushSubscribe(subscription),
+  pushUnsubscribe: (endpoint: string) => backend.pushUnsubscribe(endpoint),
   musicPlay: () => backend.musicPlay(),
   musicPause: () => backend.musicPause(),
   musicNext: () => backend.musicNext(),

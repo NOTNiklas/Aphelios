@@ -222,10 +222,32 @@ HTTPS blendet das HUD den Mikrofon-Button automatisch aus (kein Fehler, nur
 nicht verfügbar). Alles andere (Stats, Chat, Wetter, Mail, Kalender) läuft
 auch so.
 
+## Push-Benachrichtigungen einrichten
+
+Web Push (VAPID) – APHELIOS kann sich per System-Benachrichtigung melden,
+auch wenn kein Tab offen ist (z. B. fürs Morgen-Briefing). Kein eigener
+Account/Dienst nötig, alles läuft über den Push-Dienst des jeweiligen
+Browsers (FCM bei Chrome/Edge, Mozilla Autopush bei Firefox).
+
+1. `pip install -e ".[push]"` im Backend – ohne dieses Extra bleibt die
+   PushEngine inaktiv (kein Fehler, nur keine Zustellung).
+2. Backend neu starten – beim ersten Start wird automatisch ein
+   VAPID-Schlüsselpaar lokal erzeugt (`data/vapid_private.pem`).
+3. Im HUD den 🔔-Schalter in der TopBar aktivieren und die
+   Browser-Berechtigung erlauben.
+
+**Sicherer Kontext nötig** (wie bei der Sprachaktivierung oben): Der
+Browser-Tab, der sich anmeldet, muss über HTTPS oder `localhost` laufen –
+über eine reine LAN-IP (z. B. vom Handy per `http://192.168.1.23:5173`)
+bietet der Browser `pushManager` gar nicht erst an. Für Zustellung aufs
+Handy muss das Frontend also zusätzlich per HTTPS erreichbar sein (z. B.
+über einen Reverse-Proxy) – das ist bewusst nicht Teil dieser Ausbaustufe.
+
 ### Geplant: native App
 
 „Kalender/Gmail/WhatsApp direkt vom Handy aus **verwalten**" (nicht nur
-ansehen) – inkl. Termine anlegen, Mails schreiben, Push-Benachrichtigungen
-im Hintergrund – ist ein **eigenständiges Mobil-Projekt** (z. B. React
+ansehen) – inkl. Termine anlegen, Mails schreiben, echtem
+Hintergrund-Sync – ist ein **eigenständiges Mobil-Projekt** (z. B. React
 Native oder Flutter), kein Nebeneffekt der bestehenden Web-HUD-Codebasis.
+Push-Benachrichtigungen selbst gibt es bereits ohne native App (siehe oben).
 Das ist bewusst nicht in Alpha 1.0 enthalten; siehe `ROADMAP.md`.

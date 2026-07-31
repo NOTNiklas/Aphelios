@@ -51,6 +51,7 @@ separate UI nötig):
 | `/aktie <Symbol>` | Aktueller Kurs eines Börsensymbols, z. B. `/aktie AAPL` (kein Firmenname) |
 | `/aktien-analyse <Symbol>` | Investment-Committee (Bulle/Bär/Risiko + Fazit) – keine Anlageberatung |
 | `/bildschirm <Frage>` | Analysiert den aktuell live geteilten Bildschirm (Screen-Sharing-Button in der TopBar) |
+| `/briefing` | Sofortiges Morgen-Briefing (Wetter/Termine/Mails/Watchlist) – auch als Push-Benachrichtigung |
 | `/help` / `/hilfe` | Zeigt alle verfügbaren Befehle mit Kurzbeschreibung |
 
 Details in [`docs/engines.md`](./docs/engines.md).
@@ -80,6 +81,8 @@ Details in [`docs/engines.md`](./docs/engines.md).
 | **Investment-Committee** | ✅ Real, optional (braucht `ANTHROPIC_API_KEY`) | `/aktien-analyse <Symbol>` – drei parallele Claude-Perspektiven (Bulle/Bär/Risiko) + Fazit, keine Anlageberatung; rein auf Zuruf, KEIN automatischer Hintergrund-Lauf – kein Order-Ausführen, siehe [`docs/engines.md`](./docs/engines.md) |
 | **Handy-Zugriff** | ✅ Real (PWA) | HUD als App installierbar, gleiches WLAN – [`docs/integrations.md`](./docs/integrations.md) |
 | **Boot-Ablauf** | ✅ Real | Skeleton-Ladezustand beim Start (bis zu 30s), danach entweder das echte HUD oder eine 404-artige Fehlerseite ("Erneut versuchen"), falls kein Backend erreichbar ist |
+| **Push-Benachrichtigungen** | ✅ Real, optional | Web Push (VAPID) über den 🔔-Schalter in der TopBar – Schlüssel wird lokal erzeugt, kein eigener Account nötig (`pip install -e ".[push]"`); Zustellung aufs Handy braucht ein per HTTPS erreichbares Frontend |
+| **Morgen-Briefing** | ✅ Real | Läuft einmal täglich (Wetter/Termine/Mails/Watchlist zusammengefasst, per Claude oder als Vorlage), meldet sich im Chat UND als Push-Benachrichtigung – `/briefing` liefert es jederzeit sofort |
 | **Event-Bus & Engine-Manager** | ✅ Real | Ereignisgesteuerte Kommunikation zwischen unabhängigen Engines |
 | **Plugin-System** | ✅ Gerüst | Ordner-basierter Loader + Manifest-Schema |
 | **Security-Gate** | ✅ Real | Gefährliche Aktionen erfordern Bestätigung |

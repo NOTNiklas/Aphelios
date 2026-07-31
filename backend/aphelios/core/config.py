@@ -131,6 +131,26 @@ class Config:
     #: Server-/CI-Umgebungen ohne Anzeige.
     browser_headless: bool = True
 
+    # --- Push-Benachrichtigungen (PushEngine, optional: Web Push/VAPID) ---
+    #: Privater VAPID-Schlüssel (PEM) – wird beim ersten Start automatisch
+    #: erzeugt, falls die Datei fehlt (siehe push_engine.py). Der öffentliche
+    #: Teil wird daraus abgeleitet und dem Frontend über /push/vapid-public-key
+    #: bereitgestellt.
+    vapid_private_key_path: Path = Path("./data/vapid_private.pem")
+    #: Kontakt-Adresse für den VAPID-"sub"-Claim (RFC 8292) – Push-Dienste
+    #: (FCM/Mozilla Autopush) nutzen das, um den Absender bei Missbrauch zu
+    #: kontaktieren. Eine eigene E-Mail in der .env ist optional, aber empfohlen.
+    vapid_subject: str = "mailto:aphelios@localhost"
+
+    # --- Morgen-Briefing (BriefingEngine) ---
+    #: Läuft NUR einmal pro Kalendertag (Datum wird über memory.kv persistiert,
+    #: siehe briefing_engine.py) – ein Backend-Neustart am selben Tag löst also
+    #: KEIN doppeltes Briefing aus (Lehre aus der früheren ResearchEngine-
+    #: Scheduled-Research, die genau daran gescheitert ist).
+    briefing_enabled: bool = True
+    #: Uhrzeit (lokale Systemzeit, "HH:MM") ab der das Briefing frühestens läuft.
+    briefing_time: str = "07:00"
+
     # --- API-Server ---
     api_host: str = "127.0.0.1"
     api_port: int = 8787
@@ -172,6 +192,12 @@ class Config:
             whisper_device=_get("APHELIOS_WHISPER_DEVICE", "cpu"),
             ocr_lang=_get("APHELIOS_OCR_LANG", "deu+eng"),
             browser_headless=_get("APHELIOS_BROWSER_HEADLESS", "true").lower() not in ("false", "0", "no"),
+            vapid_private_key_path=_resolve_path(
+                _get("APHELIOS_VAPID_PRIVATE_KEY_PATH", "./data/vapid_private.pem")
+            ),
+            vapid_subject=_get("APHELIOS_VAPID_SUBJECT", "mailto:aphelios@localhost"),
+            briefing_enabled=_get("APHELIOS_BRIEFING_ENABLED", "true").lower() not in ("false", "0", "no"),
+            briefing_time=_get("APHELIOS_BRIEFING_TIME", "07:00"),
             api_host=_get("APHELIOS_API_HOST", "127.0.0.1"),
             api_port=int(_get("APHELIOS_API_PORT", "8787")),
             cors_origin=_get("APHELIOS_CORS_ORIGIN", "http://localhost:5173"),

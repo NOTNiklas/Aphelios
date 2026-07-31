@@ -191,6 +191,14 @@ def create_app(config: Config | None = None) -> FastAPI:
         reply = await _request_chat(bus, text)
         return {"text": reply}
 
+    @app.get("/push/vapid-public-key")
+    async def push_vapid_public_key() -> dict:
+        """Öffentlicher VAPID-Schlüssel für ``pushManager.subscribe`` im
+        Frontend – leer, solange pywebpush nicht installiert ist (siehe
+        PushEngine)."""
+        push_engine = manager.get("push")
+        return {"key": getattr(push_engine, "public_key", "") or ""}
+
     # -- WebSocket ------------------------------------------------------------
     @app.websocket("/ws")
     async def ws_endpoint(ws: WebSocket) -> None:
@@ -253,6 +261,7 @@ _SLASH_COMMANDS: dict[str, tuple[str, str, dict]] = {
 
 #: Slash-Befehle ganz ohne Argument.
 _NOARG_SLASH_COMMANDS: dict[str, tuple[str, dict]] = {
+    "/briefing": ("briefing.request", {}),
     "/downloads": ("automation.request", {"action": "downloads"}),
     "/sieh": ("vision.request", {"action": "describe", "question": ""}),
     "/lies": ("vision.request", {"action": "ocr"}),
@@ -288,6 +297,7 @@ _COMMAND_HELP: list[tuple[str, str]] = [
     ("/aktie <Symbol>", "Aktueller Kurs eines Börsensymbols, z. B. \"/aktie AAPL\" (kein Firmenname)"),
     ("/aktien-analyse <Symbol>", "Investment-Committee (Bulle/Bär/Risiko + Fazit) zu einem Symbol – keine Anlageberatung"),
     ("/bildschirm <Frage>", "Analysiert den aktuell geteilten Bildschirm (Screen-Sharing muss aktiv sein)"),
+    ("/briefing", "Sofortiges Morgen-Briefing (Wetter/Termine/Mails/Watchlist) – auch als Push-Benachrichtigung"),
     ("/help oder /hilfe", "Zeigt diese Übersicht"),
 ]
 
@@ -354,6 +364,16 @@ async def _handle_client_message(bus: EventBus, message: dict) -> None:
         await bus.publish(Event("screen.share.stop", {}, source="hud"))
     elif msg_type == "screen.proactive.set":
         await bus.publish(Event("screen.proactive.set", {"enabled": bool(message.get("enabled"))}, source="hud"))
+    elif msg_type == "push.subscribe":
+        await bus.publish(
+            Event(
+                "push.subscribe",
+                {"endpoint": message.get("endpoint"), "keys": message.get("keys") or {}},
+                source="hud",
+            )
+        )
+    elif msg_type == "push.unsubscribe":
+        await bus.publish(Event("push.unsubscribe", {"endpoint": message.get("endpoint")}, source="hud"))
     elif msg_type == "voice.speak":
         request_id = message.get("id", uuid.uuid4().hex)
         await bus.publish(

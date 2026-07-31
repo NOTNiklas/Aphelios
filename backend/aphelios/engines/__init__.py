@@ -1,6 +1,7 @@
 """APHELIOS-Engines – reale MVP-Engines und Schnittstellen-Stubs."""
 
 from aphelios.engines.automation_engine import AutomationEngine
+from aphelios.engines.briefing_engine import BriefingEngine
 from aphelios.engines.browser_engine import BrowserEngine
 from aphelios.engines.calendar_engine import CalendarEngine
 from aphelios.engines.coding_engine import CodingEngine
@@ -9,6 +10,7 @@ from aphelios.engines.mail_engine import MailEngine
 from aphelios.engines.memory_engine import MemoryEngine
 from aphelios.engines.music_engine import MusicEngine
 from aphelios.engines.planning_engine import PlanningEngine
+from aphelios.engines.push_engine import PushEngine
 from aphelios.engines.reasoning_engine import ReasoningEngine
 from aphelios.engines.research_engine import ResearchEngine
 from aphelios.engines.screen_share_engine import ScreenShareEngine
@@ -35,6 +37,8 @@ ALL_ENGINES = [
     StockEngine,
     ResearchEngine,
     ScreenShareEngine,
+    PushEngine,
+    BriefingEngine,
     ReasoningEngine,
     PlanningEngine,
     AutomationEngine,
